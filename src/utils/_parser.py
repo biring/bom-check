@@ -34,6 +34,7 @@ __all__ = [
     "is_non_empty_string",
     "is_strict_empty_string",
     "is_valid_date_string",
+    "parse_to_datetime",
     "parse_to_empty_string",
     "parse_to_float",
     "parse_to_integer",
@@ -129,6 +130,33 @@ def is_non_empty_string(input_str: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def parse_to_datetime(date_str: str) -> datetime:
+    """
+    Parse an input string into a datetime object using strict date rules.
+
+    This function first normalizes the input using parse_to_iso_date_string(), which enforces:
+        - valid formats: YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY
+        - optional trailing time component (ignored)
+        - mandatory successful conversion to canonical ISO 'YYYY-MM-DD'
+
+    After normalization, it converts the canonical ISO string into a datetime.datetime object at midnight (00:00:00).
+
+    Args:
+        date_str (str): Raw date-like input string.
+
+    Returns:
+        datetime: Parsed datetime object (YYYY-MM-DD 00:00:00).
+
+    Raises:
+        ValueError: If the input cannot be parsed as a supported date format.
+    """
+    iso_str = parse_to_iso_date_string(date_str)
+    try:
+        return datetime.strptime(iso_str, "%Y-%m-%d")
+    except ValueError as err:
+        raise ValueError(f"'{date_str}' could not be parsed into a datetime. \n{err}") from err
 
 
 def parse_to_iso_date_string(date_str: str) -> str:

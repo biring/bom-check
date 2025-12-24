@@ -22,6 +22,7 @@ License:
 """
 
 import unittest
+from datetime import datetime
 
 # noinspection PyProtectedMember
 import src.utils._parser as parser
@@ -356,6 +357,63 @@ class TestParseToIsoDateString(unittest.TestCase):
                 result = None
             except Exception as e:
                 result = type(e).__name__
+            # ASSERT
+            with self.subTest(In=value, Out=result, Exp=expected):
+                self.assertEqual(result, expected)
+
+
+class TestParseToDatetime(unittest.TestCase):
+    """
+    Unit tests for the `parse_to_datetime` function.
+    """
+
+    def test_valid_dates(self):
+        """
+        Should return a datetime object at midnight (00:00:00) for valid date strings.
+        """
+        # ARRANGE
+        valid_cases = {
+            "2025-08-06": datetime(2025, 8, 6, 0, 0, 0),
+            "2025-8-6": datetime(2025, 8, 6, 0, 0, 0),
+            "6/8/2025": datetime(2025, 8, 6, 0, 0, 0),
+            "08/06/2025": datetime(2025, 6, 8, 0, 0, 0),
+            "2025-08-06T12:34": datetime(2025, 8, 6, 0, 0, 0),
+            "2025-08-06 23:59": datetime(2025, 8, 6, 0, 0, 0),
+        }
+
+        for value, expected in valid_cases.items():
+            # ACT
+            result = parser.parse_to_datetime(value)
+
+            # ASSERT
+            with self.subTest(In=value, Out=result, Exp=expected):
+                self.assertEqual(result, expected)
+
+    def test_invalid_dates(self):
+        """
+        Should raise ValueError for invalid or unsupported date strings.
+        """
+        # ARRANGE
+        invalid_inputs = [
+            "2025-13-01",  # invalid month
+            "2025-02-30",  # invalid day
+            "31/31/2025",  # invalid day/month
+            "2025/08/06",  # unsupported separator
+            "08-06-2025",  # unsupported separator
+            "not-a-date",  # nonsensical string
+            "",  # empty string
+            " ",  # whitespace only
+        ]
+        expected = ValueError.__name__
+
+        for value in invalid_inputs:
+            # ACT
+            try:
+                parser.parse_to_datetime(value)
+                result = None
+            except Exception as e:
+                result = type(e).__name__
+
             # ASSERT
             with self.subTest(In=value, Out=result, Exp=expected):
                 self.assertEqual(result, expected)
