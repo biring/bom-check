@@ -1,23 +1,29 @@
 """
-Public interface for `models` package.
+Public interface for the `models` package.
 
-This module serves as a facade, re-exporting selected functions from internal checker modules. Consumers should import from here instead of directly accessing internal files, preserving flexibility to change internal structure without breaking external code.
+This module acts as a stable façade that re-exports selected dataclasses and field definitions from internal model implementations. External consumers must import from this module instead of referencing internal files directly, allowing internal structure to evolve without breaking API contracts.
 
-Main capabilities:
-    - Exposes Board, Bom, Header, and Row dataclasses
-    - Exposes field mappings and template identifiers
-    - Hides internal implementation from external consumers
+Exposed capabilities:
+    - Raw Version 3 BOM models (Board, Bom, Header, Row)
+    - Canonical BOM models used for export and downstream processing
+    - Header and row field enumerations for schema-aware logic
 
 Example Usage:
+    # Preferred usage via public package interface:
     from src.models import interfaces as models
-    board = models.Board.empty()
+    bom = models.CanonicalBom(boards=(board,), is_cost_bom=True)
+
+    # Direct internal usage (acceptable in tests only):
+    # Not applicable. Use public package interface.
 
 Dependencies:
     - Python >= 3.10
 
 Notes:
-    - Only symbols listed in `__all__` are exposed via `src.models`.
-    - Designed to maintain a clean, testable, and stable external API.
+    - Only symbols listed in __all__ are considered part of the public API.
+    - Internal modules (_v3_raw, _canonical, _v3_fields) must not be imported directly.
+    - This module contains no logic; it exists solely to define API boundaries.
+    - Canonical models are immutable and assume prior validation upstream.
 
 License:
     - Internal Use Only
@@ -36,12 +42,27 @@ from ._v3_raw import (
     Header,
     Row
 )
+# noinspection PyProtectedMember
+from ._canonical import (
+    CanonicalBom,
+    CanonicalBoard,
+    CanonicalHeader,
+    CanonicalPart,
+    CanonicalComponent,
+)
 
 __all__ = [
     'HeaderFields',
     'RowFields',
+
+    'CanonicalBom',
+    'CanonicalBoard',
+    'CanonicalHeader',
+    'CanonicalPart',
+    'CanonicalComponent',
+
     'Board',
     'Bom',
     'Header',
-    'Row'
+    'Row',
 ]
