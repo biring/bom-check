@@ -95,7 +95,7 @@ class TestInterface(unittest.TestCase):
 
         # ACT
         # Call the public façade, exercising the integration with internal helpers.
-        result = importer.read_excel_as_dict(folder_path,file_name)
+        result = importer.read_excel_as_dict(folder_path, file_name)
 
         # ASSERT
         # Verify type of the result
@@ -120,6 +120,25 @@ class TestInterface(unittest.TestCase):
                     f"{sheet_name} shape", Out=result_df.shape, Exp=expected_df.shape
             ):
                 self.assertEqual(result_df.shape, expected_df.shape)
+
+    def test_load_version3_bom_template(self):
+        """
+        Should load the bundled Version 3 BOM template and return a non-empty DataFrame.
+        """
+        # ARRANGE
+        # Nothing to arrange the template ia located in the resource folder
+
+        # ACT
+        result = importer.load_version3_bom_template()
+
+        # ASSERT
+        with self.subTest("Data type", Out=type(result).__name__, Exp=pd.DataFrame.__name__):
+            self.assertIsInstance(result, pd.DataFrame)
+
+        with self.subTest("Size", Out=result.shape, Exp=">0"):
+            self.assertGreater(result.shape[0], 0)
+            self.assertGreater(result.shape[1], 0)
+
 
 
 if __name__ == "__main__":
