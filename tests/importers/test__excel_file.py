@@ -17,12 +17,13 @@ Example Usage:
 Dependencies:
     - Python >= 3.10
     - Standard Library: unittest, tempfile, shutil, os
-    - External Packages: pandas
+    - External Packages: pandas, openpyxl
 
 Notes:
-    - Tests treat the loader as a pure wrapper that normalizes paths, enforces extension rules, and delegates Excel I/O to the underlying excel_io utilities.
-    - Real temp Excel workbooks are created to validate end-to-end behavior.
-    - Tests compare sheet names, DataFrame types, and basic shapes only—content comparison is intentionally minimal.
+    - Tests use real temporary Excel files to validate end-to-end behavior.
+    - Content validation is intentionally minimal; shape and structure are the contract.
+    - Project-root resolution is patched to keep tests hermetic and deterministic.
+    - Errors are asserted by exception type, not message text.
 
 License:
     - Internal Use Only
@@ -32,6 +33,7 @@ import os
 import shutil
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import pandas as pd
 
@@ -100,7 +102,7 @@ class TestReadExcelAsDict(unittest.TestCase):
         expected_result = set(self.expected_sheets.keys())
 
         # ACT
-        actual_result = excel_file.read_excel_as_dict(folder_path,file_name)
+        actual_result = excel_file.read_excel_as_dict(folder_path, file_name)
         actual_sheet_names = set(actual_result.keys())
 
         # ASSERT
@@ -185,6 +187,115 @@ class TestReadExcelAsDict(unittest.TestCase):
             actual = ""
         except Exception as exc:
             actual = type(exc).__name__
+
+        # ASSERT
+        with self.subTest(Out=actual, Exp=expected):
+            self.assertEqual(actual, expected)
+
+
+class TestLoadVersion3BomTemplate(unittest.TestCase):
+    """
+    Unit tests for the `load_version3_bom_template` Excel template loader helper.
+    """
+
+    def setUp(self):
+        """
+        Create a temporary "project root" folder with a resources/templates structure.
+        """
+        # ARRANGE (common for tests)
+        self.temp_root = tempfile.mkdtemp(prefix="v3_template_test_")
+        self.templates_dir = os.path.join(self.temp_root, "src", "resources", "templates")
+        os.makedirs(self.templates_dir, exist_ok=True)
+
+        # This must match the module constants used by the function under test.
+        self.template_file_name = excel_file.TEMPLATE_NAME + excel_file.excel_io.EXCEL_FILE_TYPE
+        self.template_path = os.path.join(self.templates_dir, self.template_file_name)
+
+    def tearDown(self):
+        """
+        Clean up temp folders created during tests.
+        """
+        if os.path.isdir(self.temp_root):
+            shutil.rmtree(self.temp_root, ignore_errors=True)
+
+    def test_happy_path(self):
+        """
+        Should load a single-worksheet template into a non-empty DataFrame.
+        """
+        # ARRANGE
+        # Create a realistic, non-empty template worksheet.
+        template_df = pd.DataFrame(
+            {
+                "Item": [1, 2],
+                "Part Number": ["PN-1001", "PN-1002"],
+                "Description": ["Resistor 10k", "Capacitor 1uF"],
+                "Qty": [10, 5],
+            }
+        )
+        with pd.ExcelWriter(self.template_path, engine="openpyxl") as writer:
+            template_df.to_excel(writer, sheet_name="Template", index=False)
+
+        # Patch project-root resolution so the function finds our temp template.
+        with patch.object(excel_file.folder_path, "resolve_project_folder", return_value=self.temp_root):
+            # ACT
+            result = excel_file.load_version3_bom_template()
+
+        # ASSERT
+        with self.subTest("Result type", Out=type(result).__name__, Exp=pd.DataFrame.__name__):
+            self.assertIsInstance(result, pd.DataFrame)
+
+        with self.subTest("Not empty", Out=result.empty, Exp=False):
+            self.assertFalse(result.empty)
+
+        with self.subTest("Shape", Out=result.shape, Exp=template_df.shape):
+            self.assertEqual(result.shape, template_df.shape)
+
+        with self.subTest("Columns", Out=list(result.columns), Exp=list(template_df.columns)):
+            self.assertEqual(list(result.columns), list(template_df.columns))
+
+    def test_raises_on_multiple_worksheets(self):
+        """
+        Should raise RuntimeError when the template workbook contains more than one worksheet.
+        """
+        # ARRANGE
+        df1 = pd.DataFrame({"A": [1]})
+        df2 = pd.DataFrame({"B": [2]})
+        with pd.ExcelWriter(self.template_path, engine="openpyxl") as writer:
+            df1.to_excel(writer, sheet_name="Sheet1", index=False)
+            df2.to_excel(writer, sheet_name="Sheet2", index=False)
+
+        expected = RuntimeError.__name__
+
+        # ACT
+        with patch.object(excel_file.folder_path, "resolve_project_folder", return_value=self.temp_root):
+            try:
+                excel_file.load_version3_bom_template()
+                actual = ""  # No exception raised
+            except Exception as exc:
+                actual = type(exc).__name__
+
+        # ASSERT
+        with self.subTest(Out=actual, Exp=expected):
+            self.assertEqual(actual, expected)
+
+    def test_raises_on_empty(self):
+        """
+        Should raise RuntimeError when the template workbook has a single worksheet, but it is empty.
+        """
+        # ARRANGE
+        empty_df = pd.DataFrame()
+        with pd.ExcelWriter(self.template_path, engine="openpyxl") as writer:
+            empty_df.to_excel(writer, sheet_name="Template", index=False)
+
+        expected = RuntimeError.__name__
+
+        # ACT
+        with patch.object(excel_file.folder_path, "resolve_project_folder", return_value=self.temp_root):
+            try:
+                excel_file.load_version3_bom_template()
+                actual = ""  # No exception raised
+            except Exception as exc:
+                actual = type(exc).__name__
 
         # ASSERT
         with self.subTest(Out=actual, Exp=expected):
