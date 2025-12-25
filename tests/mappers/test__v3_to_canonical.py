@@ -136,105 +136,6 @@ class TestMapBoard(unittest.TestCase):
                         self.assertEqual(act_value, exp_value)
 
 
-class TestMapBom(unittest.TestCase):
-    """
-    Unit tests for the `map_bom` mapping function.
-    """
-
-    def test_happy_path(self):
-        """
-        Should map version 3 bom to canonical bom field-by-field.
-        """
-        # ARRANGE
-        cases = (
-            (fx_v3.BOM_A, fx_canon.BOM_A_CANONICAL),
-            (fx_v3.BOM_B, fx_canon.BOM_B_CANONICAL),
-        )
-
-        for case, expected in cases:
-            # ACT
-            actual_bom = mapper.map_bom(case)
-
-            # ASSERT: is_cost_bom
-            with self.subTest("is_cost_bom", Out=actual_bom.is_cost_bom, Exp=expected.is_cost_bom):
-                self.assertEqual(actual_bom.is_cost_bom, expected.is_cost_bom)
-
-            # ASSERT: board count
-            exp_boards = expected.boards
-            act_boards = actual_bom.boards
-            with self.subTest("Board count", Out=len(act_boards), Exp=len(exp_boards)):
-                self.assertEqual(len(act_boards), len(exp_boards))
-
-            # ASSERT: each board header + parts matches canonical fixture
-            for b_idx, (exp_board, act_board) in enumerate(zip(exp_boards, act_boards), start=1):
-                # Header
-                for field_name in exp_board.header.__dict__.keys():
-                    exp_value = getattr(exp_board.header, field_name)
-                    act_value = getattr(act_board.header, field_name)
-                    with self.subTest(
-                            BoardIndex=b_idx,
-                            Section="Header",
-                            Field=field_name,
-                            Out=act_value,
-                            Exp=exp_value,
-                    ):
-                        self.assertEqual(act_value, exp_value)
-
-                # Parts
-                exp_parts = exp_board.parts
-                act_parts = act_board.parts
-                with self.subTest(
-                        BoardIndex=b_idx,
-                        Section="Part count",
-                        Out=len(act_parts),
-                        Exp=len(exp_parts),
-                ):
-                    self.assertEqual(len(act_parts), len(exp_parts))
-
-                for p_idx, (exp_part, act_part) in enumerate(zip(exp_parts, act_parts), start=1):
-                    for field_name in exp_part.__dict__.keys():
-                        exp_value = getattr(exp_part, field_name)
-                        act_value = getattr(act_part, field_name)
-                        with self.subTest(
-                                BoardIndex=b_idx,
-                                Section="Part",
-                                PartIndex=p_idx,
-                                Field=field_name,
-                                Out=act_value,
-                                Exp=exp_value,
-                        ):
-                            self.assertEqual(act_value, exp_value)
-
-    def test_raise(self):
-        """
-        Should raise an error when an exception is raised.
-        """
-        # ARRANGE
-        cases = (
-            (fx_v3.BOM_A, RuntimeError("Verify failed"), RuntimeError),
-            (fx_v3.BOM_A, KeyError("boom"), RuntimeError),
-        )
-
-        # ACT
-        for case, injected_error, expected in cases:
-            expected_msg_fragment = str(injected_error)
-            with patch.object(dep.verify, "v3_bom", side_effect=injected_error):
-                try:
-                    mapper.map_bom(case)
-                    actual = ""
-                except Exception as ex:
-                    actual = type(ex)
-                    msg = str(ex)
-
-                # ASSERT: type
-                with self.subTest("Raise exception", Out=actual, Expected=expected):
-                    self.assertEqual(actual, expected)
-
-                # ASSERT: message contains original error message
-                with self.subTest("Raise msg", Out=msg, Expected=expected_msg_fragment):
-                    self.assertIn(expected_msg_fragment, msg)
-
-
 class TestMapComponent(unittest.TestCase):
     """
     Unit tests for the `map_component` mapping helper.
@@ -370,6 +271,105 @@ class TestMapPart(unittest.TestCase):
                             Exp=exp_value,
                     ):
                         self.assertEqual(act_value, exp_value)
+
+
+class TestMapV3ToCanonicalBom(unittest.TestCase):
+    """
+    Unit tests for the `map_bom` mapping function.
+    """
+
+    def test_happy_path(self):
+        """
+        Should map version 3 bom to canonical bom field-by-field.
+        """
+        # ARRANGE
+        cases = (
+            (fx_v3.BOM_A, fx_canon.BOM_A_CANONICAL),
+            (fx_v3.BOM_B, fx_canon.BOM_B_CANONICAL),
+        )
+
+        for case, expected in cases:
+            # ACT
+            actual_bom = mapper.map_v3_to_canonical_bom(case)
+
+            # ASSERT: is_cost_bom
+            with self.subTest("is_cost_bom", Out=actual_bom.is_cost_bom, Exp=expected.is_cost_bom):
+                self.assertEqual(actual_bom.is_cost_bom, expected.is_cost_bom)
+
+            # ASSERT: board count
+            exp_boards = expected.boards
+            act_boards = actual_bom.boards
+            with self.subTest("Board count", Out=len(act_boards), Exp=len(exp_boards)):
+                self.assertEqual(len(act_boards), len(exp_boards))
+
+            # ASSERT: each board header + parts matches canonical fixture
+            for b_idx, (exp_board, act_board) in enumerate(zip(exp_boards, act_boards), start=1):
+                # Header
+                for field_name in exp_board.header.__dict__.keys():
+                    exp_value = getattr(exp_board.header, field_name)
+                    act_value = getattr(act_board.header, field_name)
+                    with self.subTest(
+                            BoardIndex=b_idx,
+                            Section="Header",
+                            Field=field_name,
+                            Out=act_value,
+                            Exp=exp_value,
+                    ):
+                        self.assertEqual(act_value, exp_value)
+
+                # Parts
+                exp_parts = exp_board.parts
+                act_parts = act_board.parts
+                with self.subTest(
+                        BoardIndex=b_idx,
+                        Section="Part count",
+                        Out=len(act_parts),
+                        Exp=len(exp_parts),
+                ):
+                    self.assertEqual(len(act_parts), len(exp_parts))
+
+                for p_idx, (exp_part, act_part) in enumerate(zip(exp_parts, act_parts), start=1):
+                    for field_name in exp_part.__dict__.keys():
+                        exp_value = getattr(exp_part, field_name)
+                        act_value = getattr(act_part, field_name)
+                        with self.subTest(
+                                BoardIndex=b_idx,
+                                Section="Part",
+                                PartIndex=p_idx,
+                                Field=field_name,
+                                Out=act_value,
+                                Exp=exp_value,
+                        ):
+                            self.assertEqual(act_value, exp_value)
+
+    def test_raise(self):
+        """
+        Should raise an error when an exception is raised.
+        """
+        # ARRANGE
+        cases = (
+            (fx_v3.BOM_A, RuntimeError("Verify failed"), RuntimeError),
+            (fx_v3.BOM_A, KeyError("boom"), RuntimeError),
+        )
+
+        # ACT
+        for case, injected_error, expected in cases:
+            expected_msg_fragment = str(injected_error)
+            with patch.object(dep.verify, "v3_bom", side_effect=injected_error):
+                try:
+                    mapper.map_v3_to_canonical_bom(case)
+                    actual = ""
+                except Exception as ex:
+                    actual = type(ex)
+                    msg = str(ex)
+
+                # ASSERT: type
+                with self.subTest("Raise exception", Out=actual, Expected=expected):
+                    self.assertEqual(actual, expected)
+
+                # ASSERT: message contains original error message
+                with self.subTest("Raise msg", Out=msg, Expected=expected_msg_fragment):
+                    self.assertIn(expected_msg_fragment, msg)
 
 
 if __name__ == "__main__":

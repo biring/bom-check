@@ -181,7 +181,7 @@ def _map_rows_to_part(primary: V3Row, alternates: tuple[V3Row, ...]) -> Canonica
     )
 
 
-def map_bom(fixed_bom: V3Bom) -> CanonicalBom:
+def map_v3_to_canonical_bom(fixed_bom: V3Bom) -> CanonicalBom:
     """
     Map a verified version 3 BOM into a canonical BOM.
 
