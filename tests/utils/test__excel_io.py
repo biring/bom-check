@@ -1,26 +1,14 @@
 """
-Unit tests for Excel utilities in `src.utils.excel`.
+Unit tests for Excel I/O utilities in `src.utils._excel_io`.
 
-This module validates behavior for:
- - map_excel_sheets_to_string_dataframes: reads all sheets to DataFrames of strings
- - read_excel_file: loads a multi-sheet .xlsx into {sheet_name: DataFrame[str]}
- - sanitize_sheet_name_for_excel: removes invalid chars, enforces 31-char limit, str-coerces
- - write_frame_to_excel: writes a single DataFrame to .xlsx (no index), wraps errors
- - write_sheets_to_excel: writes multiple DataFrames to sheets with sanitization and overwrite rules
-
-Tests cover:
- - Round-trip fidelity (cell-by-cell) across mixed types, blanks → "", and headers
- - Input validation (non-Excel inputs, non-string paths, empty inputs)
- - Overwrite behavior (exists + overwrite=False → RuntimeError; True → replace)
- - File-system edge cases (read-only files, non-existent directories)
- - Pandas default sheet naming when a falsy sheet name is supplied
+This module validates correct behavior for reading, writing, and sanitizing Excel (.xlsx) files using pandas and openpyxl. Tests exercise real file-system and Excel engine interactions without mocks to ensure end-to-end correctness.
 
 Example Usage:
-    # Discovery (from repo root):
+    # Preferred usage via project-root invocation:
     python -m unittest tests/utils/test__excel_io.py
 
-    # Run directly:
-    python tests/utils/test__excel_io.py
+    # Direct discovery (runs all tests, including this module):
+    python -m unittest discover -s tests
 
 Dependencies:
  - Python >= 3.9
@@ -62,7 +50,7 @@ class TestMapExcelSheetsToStringDataFrames(unittest.TestCase):
 
     def setUp(self):
         """Create a temporary directory for test artifacts."""
-        self.tmpdir = tempfile.mkdtemp(prefix="excel_to_dict_")
+        self.tmpdir = tempfile.mkdtemp(prefix="BomCheck_UnitTest_ExcelIO")
 
     def tearDown(self):
         """Clean up all temporary artifacts created by the tests."""
@@ -154,6 +142,63 @@ class TestMapExcelSheetsToStringDataFrames(unittest.TestCase):
             with self.subTest(In=type(bad).__name__, Out=result, Exp=expected):
                 self.assertEqual(result, expected)
 
+    def test_multi_sheet_map_when_top_row_is_data(self):
+        """
+        Should read multiple sheets where the top row is data (no header row) when top_row_is_header=False.
+
+        Verifies that:
+          - The first row is not treated as headers
+          - All values are preserved as strings (including blanks as "")
+          - Cell-by-cell values match what was written
+        """
+        # ARRANGE
+        name_a = "SheetA"
+        name_b = "SheetB"
+
+        # Include mixed types + blank to validate string coercion + blank preservation
+        data_a = [
+            [True],
+            [42],
+            [3.14159],
+            [""],
+            ["Hello"],
+            ["2025-08-08"],
+        ]
+        data_b = [
+            [False, -987, 0.000123, "World", "$99.99"],
+            ["Extra", 123, "$9.99", "", "#$%"],
+        ]
+
+        df_a = pd.DataFrame(data_a)
+        df_b = pd.DataFrame(data_b)
+
+        file_path = os.path.join(self.tmpdir, "sample_no_header.xlsx")
+        with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+            df_a.to_excel(writer, sheet_name=name_a, index=False, header=False)
+            df_b.to_excel(writer, sheet_name=name_b, index=False, header=False)
+
+        # ACT
+        with pd.ExcelFile(file_path, engine="openpyxl") as workbook:
+            result = excel_io.map_excel_sheets_to_string_dataframes(
+                workbook,
+                top_row_is_header=False,
+            )
+
+        # ASSERT
+        # Compare cell-by-cell values as strings (ignore column labels, since header=None implies 0..n-1)
+        expected = {name_a: df_a, name_b: df_b}
+
+        for sheet_name, expected_df in expected.items():
+            with self.subTest(Sheet=sheet_name):
+                self.assertIn(sheet_name, result)
+
+                actual_vals = result[sheet_name].astype(str).values.tolist()
+                expected_vals = expected_df.astype(str).values.tolist()
+
+                equal = actual_vals == expected_vals
+                with self.subTest(Out=equal, Exp=True):
+                    self.assertTrue(equal)
+
 
 class TestReadExcelFile(unittest.TestCase):
     """
@@ -168,7 +213,7 @@ class TestReadExcelFile(unittest.TestCase):
         """
         Create a temporary Excel file for testing.
         """
-        self.tmpdir = tempfile.mkdtemp(prefix="read_excel_")
+        self.tmpdir = tempfile.mkdtemp(prefix="BomCheck_UnitTest_ExcelIO")
 
     def tearDown(self):
         """
@@ -255,6 +300,42 @@ class TestReadExcelFile(unittest.TestCase):
         with self.subTest(Out=result, Exp=expected_error):
             self.assertEqual(result, expected_error)
 
+    def test_reads_excel_when_top_row_is_data(self):
+        """
+        Should read an Excel file where the top row is data (no header row) when top_row_is_header=False.
+
+        Verifies that:
+          - The first row is not treated as headers
+          - All values are returned as strings
+          - Data round-trips correctly when reading with header=None behavior
+        """
+        # ARRANGE
+        name_a = "SheetA"
+        name_b = "SheetB"
+
+        # Write WITHOUT headers (top row is data)
+        df_a = pd.DataFrame([["a1"], ["a2"]])
+        df_b = pd.DataFrame([["b1", "b2"], ["b3", "b4"]])
+
+        file_path = os.path.join(self.tmpdir, "no_header.xlsx")
+        with pd.ExcelWriter(file_path, engine="openpyxl") as writer:
+            df_a.to_excel(writer, sheet_name=name_a, index=False, header=False)
+            df_b.to_excel(writer, sheet_name=name_b, index=False, header=False)
+
+        # ACT
+        result = excel_io.read_excel_file(file_path, top_row_is_header=False)
+
+        # ASSERT
+        # Compare values only (columns will be integer labels 0 ... n-1)
+        a_equal = result[name_a].astype(str).values.tolist() == df_a.astype(str).values.tolist()
+        b_equal = result[name_b].astype(str).values.tolist() == df_b.astype(str).values.tolist()
+
+        with self.subTest(Sheet=name_a, Out=a_equal, Exp=True):
+            self.assertTrue(a_equal)
+
+        with self.subTest(Sheet=name_b, Out=b_equal, Exp=True):
+            self.assertTrue(b_equal)
+
 
 class TestSanitizeSheetName(unittest.TestCase):
     """
@@ -311,7 +392,7 @@ class TestWriteFrameToExcel(unittest.TestCase):
 
     def setUp(self):
         """Create a temporary directory for writing files."""
-        self.tmpdir = tempfile.TemporaryDirectory()
+        self.tmpdir = tempfile.TemporaryDirectory(suffix="UnitTestBomCheckExcelIO")
         self.base = self.tmpdir.name
 
         # Sample, realistic DataFrame (mixed types, including an empty string)
@@ -337,7 +418,7 @@ class TestWriteFrameToExcel(unittest.TestCase):
 
         # ACT
         # Execute the function under test
-        excel_io.write_frame_to_excel(out_path, self.df)
+        excel_io.write_frame_to_excel(out_path, self.df, add_header_to_top_row=True)
 
         # Read the file back to validate outcomes (independent verification)
         with (pd.ExcelFile(out_path, engine="openpyxl") as workbook):
@@ -367,6 +448,36 @@ class TestWriteFrameToExcel(unittest.TestCase):
             with self.subTest(Out=result, Exp=expected):
                 self.assertEqual(result, expected)
 
+    def test_write_roundtrip_without_header_row(self):
+        """
+        Should write an Excel file WITHOUT column headers when add_header_to_top_row=False, and round-trip the cell values correctly.
+        """
+        # ARRANGE
+        out_path = os.path.join(self.base, "bom_no_header.xlsx")
+
+        # ACT
+        excel_io.write_frame_to_excel(out_path, self.df, add_header_to_top_row=False)
+
+        # Read back with header=None so pandas doesn't treat the first row as headers
+        with pd.ExcelFile(out_path, engine="openpyxl") as workbook:
+            read_back = pd.read_excel(workbook, header=None)
+
+        # ASSERT
+        # 1) No index column added (still 3 columns)
+        with self.subTest(Out=read_back.shape[1], Exp=self.df.shape[1]):
+            self.assertEqual(read_back.shape[1], self.df.shape[1])
+
+        # 2) Row count matches original
+        with self.subTest(Out=len(read_back), Exp=len(self.df)):
+            self.assertEqual(len(read_back), len(self.df))
+
+        # 3) Cell-by-cell equality (ignore headers; compare values)
+        result_vals = read_back.astype(str).values
+        expected_vals = self.df.astype(str).values
+        for r, e in zip(result_vals.flatten().tolist(), expected_vals.flatten().tolist()):
+            with self.subTest(Out=r, Exp=e):
+                self.assertEqual(r, e)
+
     def test_invalid_directory_raises_runtime_error(self):
         """
         Should raise RuntimeError when the target directory does not exist.
@@ -378,7 +489,7 @@ class TestWriteFrameToExcel(unittest.TestCase):
 
         # ACT
         try:
-            excel_io.write_frame_to_excel(bad_path, self.df)
+            excel_io.write_frame_to_excel(bad_path, self.df, add_header_to_top_row=True)
             result = None  # No exception raised (unexpected)
         except Exception as e:
             result = type(e).__name__
@@ -409,7 +520,7 @@ class TestWriteSheetsToExcel(unittest.TestCase):
         """
         Create a temp workspace and sample DataFrames.
         """
-        self.tmpdir = tempfile.mkdtemp(prefix="excel_write_dict_win_")
+        self.tmpdir = tempfile.mkdtemp(prefix="BomCheck_UnitTest_ExcelIO")
         self.base = self.tmpdir
         self.out_path = os.path.join(self.base, "out.xlsx")
 
@@ -454,7 +565,7 @@ class TestWriteSheetsToExcel(unittest.TestCase):
         }
 
         # ACT
-        excel_io.write_sheets_to_excel(out_path, sheets, overwrite=False)
+        excel_io.write_sheets_to_excel(out_path, sheets, overwrite=False, add_header_to_top_row=True)
 
         # ASSERT: file exists
         exists = os.path.isfile(out_path)
@@ -492,7 +603,7 @@ class TestWriteSheetsToExcel(unittest.TestCase):
 
         try:
             # ACT
-            excel_io.write_sheets_to_excel(self.out_path, sheets_in, overwrite=True)
+            excel_io.write_sheets_to_excel(self.out_path, sheets_in, overwrite=True, add_header_to_top_row=True)
             result = None
         except Exception as e:
             result = type(e).__name__
@@ -510,7 +621,7 @@ class TestWriteSheetsToExcel(unittest.TestCase):
         expected_default = "Sheet1"  # pandas default when no name provided and first sheet
 
         # ACT
-        excel_io.write_sheets_to_excel(self.out_path, sheets_in, overwrite=True)
+        excel_io.write_sheets_to_excel(self.out_path, sheets_in, overwrite=True, add_header_to_top_row=True)
         with pd.ExcelFile(self.out_path, engine="openpyxl") as xl:
             sheet_names = xl.sheet_names
 
@@ -533,7 +644,7 @@ class TestWriteSheetsToExcel(unittest.TestCase):
         for val in inputs:
             # ACT
             try:
-                excel_io.write_sheets_to_excel(val, sheets)  # type: ignore[arg-type]
+                excel_io.write_sheets_to_excel(val, sheets, add_header_to_top_row=True)  # type: ignore[arg-type]
                 result = None
             except Exception as e:
                 result = type(e).__name__
@@ -588,14 +699,14 @@ class TestWriteSheetsToExcel(unittest.TestCase):
         # ARRANGE
         out_path = os.path.join(self.tmpdir, "exists.xlsx")
         # Create initial workbook
-        excel_io.write_sheets_to_excel(out_path, {"OK": self.df_a}, overwrite=False)
+        excel_io.write_sheets_to_excel(out_path, {"OK": self.df_a}, overwrite=False, add_header_to_top_row=True)
         self.assertTrue(os.path.isfile(out_path))
 
         expected = RuntimeError.__name__
 
         # ACT
         try:
-            excel_io.write_sheets_to_excel(out_path, {"OK": self.df_b}, overwrite=False)
+            excel_io.write_sheets_to_excel(out_path, {"OK": self.df_b}, overwrite=False, add_header_to_top_row=True)
             result = None
         except Exception as e:
             result = type(e).__name__
@@ -610,11 +721,11 @@ class TestWriteSheetsToExcel(unittest.TestCase):
         """
         # ARRANGE
         out_path = os.path.join(self.tmpdir, "rewrite.xlsx")
-        excel_io.write_sheets_to_excel(out_path, {"OK": self.df_a}, overwrite=False)
+        excel_io.write_sheets_to_excel(out_path, {"OK": self.df_a}, overwrite=False, add_header_to_top_row=True)
         self.assertTrue(os.path.isfile(out_path))
 
         # ACT
-        excel_io.write_sheets_to_excel(out_path, {"OK": self.df_b}, overwrite=True)
+        excel_io.write_sheets_to_excel(out_path, {"OK": self.df_b}, overwrite=True, add_header_to_top_row=True)
 
         # ASSERT: verify content replaced
         with pd.ExcelFile(out_path, engine="openpyxl") as workbook:
@@ -631,7 +742,7 @@ class TestWriteSheetsToExcel(unittest.TestCase):
         ro_path = os.path.join(self.tmpdir, "readonly.xlsx")
 
         # Create initial file, then mark read-only
-        excel_io.write_sheets_to_excel(ro_path, {"OK": self.df_a}, overwrite=False)
+        excel_io.write_sheets_to_excel(ro_path, {"OK": self.df_a}, overwrite=False, add_header_to_top_row=True)
         os.chmod(ro_path, stat.S_IREAD)  # set read-only attribute
 
         expected = RuntimeError.__name__
@@ -639,7 +750,7 @@ class TestWriteSheetsToExcel(unittest.TestCase):
         # ACT
         try:
             # This attempts to open in 'x' or 'w' mode depending on overwrite (use True to focus the overwrite path)
-            excel_io.write_sheets_to_excel(ro_path, {"OK": self.df_b}, overwrite=True)
+            excel_io.write_sheets_to_excel(ro_path, {"OK": self.df_b}, overwrite=True, add_header_to_top_row=True)
             result = None
         except Exception as e:
             result = type(e).__name__
@@ -653,6 +764,46 @@ class TestWriteSheetsToExcel(unittest.TestCase):
         # ASSERT
         with self.subTest(Out=result, Exp=expected):
             self.assertEqual(result, expected)
+
+    def test_write_sheets_without_header_row(self):
+        """
+        Should write multiple DataFrames to separate worksheets without adding a header row
+        when add_header_to_top_row=False.
+
+        Verifies that:
+          - No column header row is written
+          - All data rows are preserved
+          - Data round-trips correctly when read with header=None
+        """
+        # ARRANGE
+        out_path = os.path.join(self.tmpdir, "no_header_multi.xlsx")
+        sheets = {
+            "OK": self.df_a,
+            "B": self.df_b,
+        }
+
+        # ACT
+        excel_io.write_sheets_to_excel(
+            out_path,
+            sheets,
+            overwrite=False,
+            add_header_to_top_row=False,
+        )
+
+        # ASSERT
+        with pd.ExcelFile(out_path, engine="openpyxl") as workbook:
+            read_a = pd.read_excel(workbook, sheet_name="OK", header=None)
+            read_b = pd.read_excel(workbook, sheet_name="B", header=None)
+
+        # Compare values only (column names are autogenerated integers)
+        a_equal = read_a.astype(str).values.tolist() == self.df_a.astype(str).values.tolist()
+        b_equal = read_b.astype(str).values.tolist() == self.df_b.astype(str).values.tolist()
+
+        with self.subTest(Sheet="OK", Out=a_equal, Exp=True):
+            self.assertTrue(a_equal)
+
+        with self.subTest(Sheet="B", Out=b_equal, Exp=True):
+            self.assertTrue(b_equal)
 
 
 if __name__ == "__main__":

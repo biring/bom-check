@@ -53,7 +53,10 @@ EXCEL_FILE_TYPE = ".xlsx"
 EXCEL_NAME_CONSTRAINTS = re.compile(r'[:\\/?*\[\]]')
 
 
-def map_excel_sheets_to_string_dataframes(workbook: pd.ExcelFile) -> dict[str, pd.DataFrame]:
+def map_excel_sheets_to_string_dataframes(
+        workbook: pd.ExcelFile,
+        top_row_is_header: bool = True,
+) -> dict[str, pd.DataFrame]:
     """
     Maps an open pandas ExcelFile into a dict of DataFrames with all values preserved as strings.
 
@@ -61,6 +64,7 @@ def map_excel_sheets_to_string_dataframes(workbook: pd.ExcelFile) -> dict[str, p
 
     Args:
         workbook (pd.ExcelFile): An already-open pandas ExcelFile instance (e.g., via `pd.ExcelFile(path, engine="openpyxl")`). Must remain valid for the duration of the call.
+        top_row_is_header (bool): If True, the top row is treated as column headers. If False, the top row is treated as data.
 
     Returns:
         dict[str, pd.DataFrame]: Mapping of sheet name to DataFrame, with every column typed as `str` and blanks represented as "".
@@ -78,29 +82,34 @@ def map_excel_sheets_to_string_dataframes(workbook: pd.ExcelFile) -> dict[str, p
             df = pd.read_excel(
                 workbook,
                 sheet_name=sheet_name,
+                header=0 if top_row_is_header else None,
                 dtype=str,  # Force all cells to be strings
                 na_filter=False  # Keep blanks as empty strings instead of NaN
             )
             # Store the successfully read sheet
             sheet_frames[sheet_name] = df
-        except Exception as e:
+        except Exception as exc:
             # Wrap with context (sheet + source) to make test failures and logs actionable
             raise RuntimeError(
-                f"Failed to read sheet '{sheet_name}' from Excel file. "
-                f"Cause: {type(e).__name__}: {e}"
-            ) from e
+                f"Failed to read sheet '{sheet_name}' from Excel file."
+                f"\n{exc}"
+            ) from exc
 
     return sheet_frames
 
 
-def read_excel_file(file_path: str) -> dict[str, pd.DataFrame]:
+def read_excel_file(
+        file_path: str,
+        top_row_is_header: bool = True,
+) -> dict[str, pd.DataFrame]:
     """
     Open an Excel `.xlsx` file, read every worksheet into string-typed DataFrames, then close it.
 
-    The workbook is opened with the `openpyxl` engine and disposed via a context manager. All cells are loaded as strings and blank cells remain empty strings (not NaN). This function delegates sheet parsing to `read_excel_sheets_as_strings` and ensures the file handle is always closed.
+    The workbook is opened with the `openpyxl` engine and disposed via a context manager. All cells are loaded as strings and blank cells remain empty strings (not NaN). This function delegates sheet parsing to `map_excel_sheets_to_string_dataframes` and ensures the file handle is always closed.
 
     Args:
         file_path (str): Path to the `.xlsx` workbook to load.
+        top_row_is_header (bool): If True, the top row is treated as column headers. If False, the top row is treated as data.
 
     Returns:
         dict[str, pd.DataFrame]: Mapping of sheet name -> DataFrame, with all columns typed as `str`.
@@ -113,12 +122,15 @@ def read_excel_file(file_path: str) -> dict[str, pd.DataFrame]:
         # Open and auto-close the workbook; ensures no lingering file locks on Windows
         with pd.ExcelFile(file_path, engine="openpyxl") as excel_file:
             # Delegate per-sheet parsing; enforces str dtype and keeps blanks as ""
-            return map_excel_sheets_to_string_dataframes(excel_file)
-    except Exception as e:
+            return map_excel_sheets_to_string_dataframes(
+                excel_file,
+                top_row_is_header=top_row_is_header,
+            )
+    except Exception as exc:
         raise RuntimeError(
-            f"Failed to read Excel file at '{file_path}'. "
-            f"{type(e).__name__}: {e}"
-        ) from e
+            f"Failed to read Excel file at '{file_path}'."
+            f"\n{exc}"
+        ) from exc
 
 
 def sanitize_sheet_name_for_excel(name: str) -> str:
@@ -147,7 +159,11 @@ def sanitize_sheet_name_for_excel(name: str) -> str:
     return sheet_name
 
 
-def write_frame_to_excel(file_path: str, dataframe: pd.DataFrame) -> None:
+def write_frame_to_excel(
+        file_path: str,
+        dataframe: pd.DataFrame,
+        add_header_to_top_row: bool = True,
+) -> None:
     """
     Write a pandas DataFrame to an Excel `.xlsx` file using the openpyxl engine.
 
@@ -156,6 +172,7 @@ def write_frame_to_excel(file_path: str, dataframe: pd.DataFrame) -> None:
     Args:
         file_path (str): Destination path for the Excel file. Should end with `.xlsx`.
         dataframe (pd.DataFrame): The DataFrame to be written.
+        add_header_to_top_row (bool): If True, write column names as the first row. If False, column names are not written to the first row.
 
     Returns:
         None
@@ -168,18 +185,23 @@ def write_frame_to_excel(file_path: str, dataframe: pd.DataFrame) -> None:
         dataframe.to_excel(
             file_path,
             index=False,
+            header=add_header_to_top_row,
             engine="openpyxl"
         )
-    except Exception as e:
+    except Exception as exc:
         # Wrap any exception with context about the file being written
         raise RuntimeError(
             f"Failed to write Excel file to '{file_path}'. "
-            f"Cause: {type(e).__name__}: {e}"
-        ) from e
+            f"\n{exc}"
+        ) from exc
 
 
-def write_sheets_to_excel(file_path: str, frames_by_sheet: dict[str, pd.DataFrame],
-                          overwrite: bool = False) -> None:
+def write_sheets_to_excel(
+        file_path: str,
+        frames_by_sheet: dict[str, pd.DataFrame],
+        overwrite: bool = False,
+        add_header_to_top_row: bool = True,
+) -> None:
     """
     Write multiple pandas DataFrames to a single Excel `.xlsx` file, one worksheet per mapping entry.
 
@@ -189,6 +211,7 @@ def write_sheets_to_excel(file_path: str, frames_by_sheet: dict[str, pd.DataFram
         file_path (str): Destination path for the workbook. Must end with `.xlsx`.
         frames_by_sheet (dict[str, pd.DataFrame]): Mapping of requested sheet name to DataFrame.
         overwrite (bool, optional): If True, overwrite an existing file; otherwise, fail when the target file already exists. Defaults to False.
+        add_header_to_top_row: If True, write column names as the first row. If False, column names are not written to the first row.
 
     Returns:
         None: Writes an Excel file to `file_path` and does not return a value.
@@ -217,12 +240,12 @@ def write_sheets_to_excel(file_path: str, frames_by_sheet: dict[str, pd.DataFram
                 if sheet:
                     # Let pandas assign default name if given sheet_name is incompatible
                     safe_sheet = sanitize_sheet_name_for_excel(sheet)
-                    frame.to_excel(writer, sheet_name=safe_sheet, index=False)
+                    frame.to_excel(writer, sheet_name=safe_sheet, index=False, header=add_header_to_top_row)
                 else:
-                    frame.to_excel(writer, index=False)
+                    frame.to_excel(writer, index=False, header=add_header_to_top_row)
     except Exception as err:
         # Wrap and re-raise unexpected exceptions with path and original error details
         raise RuntimeError(
             f"Failed to write Excel workbook '{file_path}' using mode '{mode}'."
-            f"{type(err).__name__}: {err}"
+            f"\n{err}"
         ) from err
