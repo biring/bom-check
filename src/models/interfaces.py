@@ -1,68 +1,87 @@
 """
-Public interface for the `models` package.
+Public interface façade for the models package.
 
-This module acts as a stable façade that re-exports selected dataclasses and field definitions from internal model implementations. External consumers must import from this module instead of referencing internal files directly, allowing internal structure to evolve without breaking API contracts.
+This module defines the stable, supported API surface for model objects used throughout the application. It re-exports selected data models and field definitions from internal implementations so that external callers can depend on a consistent interface while allowing internal structure to evolve without breaking consumers.
 
-Exposed capabilities:
-    - Raw Version 3 BOM models (Board, Bom, Header, Row)
-    - Canonical BOM models used for export and downstream processing
-    - Header and row field enumerations for schema-aware logic
+Key responsibilities
+	- Expose versioned and canonical bill of materials models for external use.
+	- Provide schema-related field enumerations for header and row data.
+	- Act as a boundary layer that prevents direct dependency on internal model modules.
 
-Example Usage:
-    # Preferred usage via public package interface:
-    from src.models import interfaces as models
-    bom = models.CanonicalBom(boards=(board,), is_cost_bom=True)
+Example usage
+	# Preferred usage via public package interface:
+	from src.models import interfaces as models
+	bom = models.CanonicalBom(boards=(board,), is_cost_bom=True)
 
-    # Direct internal usage (acceptable in tests only):
-    # Not applicable. Use public package interface.
+	# Direct module usage (acceptable in unit tests or internal scripts only):
+	from src.models.interfaces import CanonicalBom
+	bom = CanonicalBom(boards=(board,), is_cost_bom=True)
 
-Dependencies:
-    - Python >= 3.10
+Dependencies
+	- Python 3.x
+	- Standard Library: None
 
-Notes:
-    - Only symbols listed in __all__ are considered part of the public API.
-    - Internal modules (_v3_raw, _canonical, _v3_fields) must not be imported directly.
-    - This module contains no logic; it exists solely to define API boundaries.
-    - Canonical models are immutable and assume prior validation upstream.
+Notes
+	- Only explicitly re-exported symbols are intended for external consumption.
+	- Internal model modules are treated as implementation details and may change without notice.
+	- This module contains no business logic and exists solely to define and stabilize API boundaries.
 
-License:
-    - Internal Use Only
+License
+	- Internal Use Only
 """
 
 # Re-export selected API from internal modules to expose as public API
+
+# noinspection PyProtectedMember
+from ._bom_v3 import (
+    BoardV3,
+    BomV3,
+    HeaderV3,
+    HeaderV3AttrNames,
+    RowV3,
+    RowV3AttrNames,
+)
+
 # noinspection PyProtectedMember
 from ._v3_fields import (
     HeaderFields,
     RowFields,
 )
+
 # noinspection PyProtectedMember
 from ._v3_raw import (
     Board,
     Bom,
     Header,
-    Row
+    Row,
 )
+
 # noinspection PyProtectedMember
 from ._canonical import (
-    CanonicalBom,
     CanonicalBoard,
+    CanonicalBom,
+    CanonicalComponent,
     CanonicalHeader,
     CanonicalPart,
-    CanonicalComponent,
 )
 
+# Public API surface for this package
 __all__ = [
-    'HeaderFields',
-    'RowFields',
-
-    'CanonicalBom',
-    'CanonicalBoard',
-    'CanonicalHeader',
-    'CanonicalPart',
-    'CanonicalComponent',
-
-    'Board',
-    'Bom',
-    'Header',
-    'Row',
+    "BoardV3",
+    "BomV3",
+    "HeaderV3",
+    "HeaderV3AttrNames",
+    "RowV3",
+    "RowV3AttrNames",
+    "HeaderFields",
+    "RowFields",
+    "CanonicalBoard",
+    "CanonicalBom",
+    "CanonicalComponent",
+    "CanonicalHeader",
+    "CanonicalPart",
+    "Board",
+    "Bom",
+    "Header",
+    "Row",
 ]
