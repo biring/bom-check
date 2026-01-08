@@ -13,9 +13,6 @@ Example usage
 	from src.schemas import interfaces as schema
 	identifiers = schema.TEMPLATE_IDENTIFIERS_V3
 
-	Direct module usage (acceptable in unit tests or internal scripts only)
-	Not Applicable. This is an internal module.
-
 Dependencies
 	- Python 3.10
 	- Standard Library: None
