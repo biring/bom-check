@@ -26,7 +26,17 @@ License:
 __all__ = []  # Internal-only; not part of public API. Star import from this module gets nothing.
 
 import re
-from src.models import interfaces as mdl
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
+from src.models.interfaces import (
+    BoardV3,
+    HeaderV3,
+    RowV3,
+)
+
 from src.lookups import interfaces as lookup
 from src.settings import application as app_settings
 from src.utils import parser
@@ -47,14 +57,14 @@ LOG_TOTAL_COST_CHANGE = "Total cost set to the product of material and overhead 
 ERR_FLOAT_PARSE = "{field} value '{value}' is not a valid floating point number: {reason}"
 
 
-def component_type_lookup(row: mdl.Row) -> tuple[str, str]:
+def component_type_lookup(row: RowV3) -> tuple[str, str]:
     """
     Perform fuzzy lookup to map a raw component type string to a standardized type key.
 
     This function compares the input string against all known component type variants using both Jaccard and Levenshtein similarity. It ignores specific substrings (e.g., "SMD", "DIP"), and if both metrics produce the same best match above the given threshold, the corresponding canonical component key is returned. If no match passes the threshold, the original input is returned.
 
     Args:
-        row (mdl.Row): Bom row containing the component type to autocorrect.
+        row (RowV3): Bom row containing the component type to autocorrect.
 
     Returns:
         tuple[str, str]:
@@ -106,7 +116,7 @@ def component_type_lookup(row: mdl.Row) -> tuple[str, str]:
             Value1=value1, Level1=level1, Value2=value2, Level2=level2
         )
         change_log = TEMPLATE_AUTOCORRECT_MSG.format(
-            field=mdl.RowFields.COMPONENT,
+            field=TableLabelsV3.COMPONENT_TYPE,
             before=str_in,
             after=str_out,
             reason=reason
@@ -118,7 +128,7 @@ def component_type_lookup(row: mdl.Row) -> tuple[str, str]:
     return str_out, change_log
 
 
-def expand_designators(row: mdl.Row) -> tuple[str, str]:
+def expand_designators(row: RowV3) -> tuple[str, str]:
     """
     Expands designator ranges within the string.
 
@@ -131,12 +141,12 @@ def expand_designators(row: mdl.Row) -> tuple[str, str]:
         - Descending ranges (e.g., "R6-R3") are supported and expanded in reverse order.
 
     Args:
-        row (mdl.Row): Bom row containing the designator string, possibly with ranges, to autocorrect.  .
+        row (RowV3): Bom row containing the designator string, possibly with ranges, to autocorrect.  .
 
     Returns:
         tuple[str, str]: Range expanded designator string, change log string.
     """
-    str_in = row.designator
+    str_in = row.designators
     change_log = ""
 
     parts = [p.strip() for p in str_in.split(",") if p.strip()]
@@ -159,7 +169,7 @@ def expand_designators(row: mdl.Row) -> tuple[str, str]:
     # Emit audit message only when the output differs
     if str_out != str_in:
         change_log = TEMPLATE_AUTOCORRECT_MSG.format(
-            field=mdl.RowFields.DESIGNATOR,
+            field=TableLabelsV3.DESIGNATORS,
             before=str_in,
             after=str_out,
             reason=LOG_DESIGNATOR_EXPAND)
@@ -167,14 +177,14 @@ def expand_designators(row: mdl.Row) -> tuple[str, str]:
     return str_out, change_log
 
 
-def material_cost(board: mdl.Board) -> tuple[str, str]:
+def material_cost(board: BoardV3) -> tuple[str, str]:
     """
     Autocorrect the material cost to sum of the sub-total.
 
     Base fields of sub-total and material cost must be float parse compatible.
 
     Args:
-        board (mdl.Header): Bom board containing the header with material cost to autocorrect.
+        board (BoardV3): Bom board containing the header with material cost to autocorrect.
 
     Returns:
      tuple[str, str]: correct material cost string, change log string.
@@ -182,8 +192,8 @@ def material_cost(board: mdl.Board) -> tuple[str, str]:
     Raises:
         ValueError: If base fields cannot be parsed as float.
     """
-    header: mdl.Header = board.header
-    rows: tuple[mdl.Row, ...] = board.rows
+    header: HeaderV3 = board.header
+    rows: tuple[RowV3, ...] = board.rows
     str_out = header.material_cost
     change_log = ""
     material_cost_out = 0
@@ -195,7 +205,7 @@ def material_cost(board: mdl.Board) -> tuple[str, str]:
             material_cost_out += sub_total_in
         except ValueError as err:
             raise ValueError(ERR_FLOAT_PARSE.format(
-                field=mdl.RowFields.SUB_TOTAL,
+                field=TableLabelsV3.SUB_TOTAL,
                 value=row.sub_total,
                 reason=err)
             )
@@ -204,7 +214,7 @@ def material_cost(board: mdl.Board) -> tuple[str, str]:
         material_cost_in = parser.parse_to_float(header.material_cost)
     except ValueError as err:
         raise ValueError(ERR_FLOAT_PARSE.format(
-            field=mdl.HeaderFields.MATERIAL_COST,
+            field=HeaderLabelsV3.MATERIAL_COST,
             value=header.material_cost,
             reason=err)
         )
@@ -213,7 +223,7 @@ def material_cost(board: mdl.Board) -> tuple[str, str]:
     if not helper.floats_equal(material_cost_in, material_cost_out):
         str_out = str(material_cost_out)
         change_log = TEMPLATE_AUTOCORRECT_MSG.format(
-            field=mdl.HeaderFields.MATERIAL_COST,
+            field=HeaderLabelsV3.MATERIAL_COST,
             before=material_cost_in,
             after=material_cost_out,
             reason=LOG_MATERIAL_COST_CHANGE
@@ -222,7 +232,7 @@ def material_cost(board: mdl.Board) -> tuple[str, str]:
     return str_out, change_log
 
 
-def sub_total(row: mdl.Row) -> tuple[str, str]:
+def sub_total(row: RowV3) -> tuple[str, str]:
     """
     Autocorrect the sub-total to the product of quantity and unit price.
 
@@ -245,7 +255,7 @@ def sub_total(row: mdl.Row) -> tuple[str, str]:
         qty_in = parser.parse_to_float(row.qty)
     except ValueError as err:
         raise ValueError(ERR_FLOAT_PARSE.format(
-            field=mdl.RowFields.QTY,
+            field=TableLabelsV3.QUANTITY,
             value=row.qty,
             reason=err)
         )
@@ -254,7 +264,7 @@ def sub_total(row: mdl.Row) -> tuple[str, str]:
         unit_price_in = parser.parse_to_float(row.unit_price)
     except ValueError as err:
         raise ValueError(ERR_FLOAT_PARSE.format(
-            field=mdl.RowFields.UNIT_PRICE,
+            field=TableLabelsV3.UNIT_PRICE,
             value=row.unit_price,
             reason=err)
         )
@@ -262,7 +272,7 @@ def sub_total(row: mdl.Row) -> tuple[str, str]:
         sub_total_in = parser.parse_to_float(row.sub_total)
     except ValueError as err:
         raise ValueError(ERR_FLOAT_PARSE.format(
-            field=mdl.RowFields.SUB_TOTAL,
+            field=TableLabelsV3.SUB_TOTAL,
             value=row.sub_total,
             reason=err)
         )
@@ -273,7 +283,7 @@ def sub_total(row: mdl.Row) -> tuple[str, str]:
     if not helper.floats_equal(sub_total_in, sub_total_out):
         str_out = str(sub_total_out)
         change_log = TEMPLATE_AUTOCORRECT_MSG.format(
-            field=mdl.RowFields.SUB_TOTAL,
+            field=TableLabelsV3.SUB_TOTAL,
             before=sub_total_in,
             after=sub_total_out,
             reason=LOG_SUBTOTAL_CHANGE
@@ -282,7 +292,7 @@ def sub_total(row: mdl.Row) -> tuple[str, str]:
     return str_out, change_log
 
 
-def total_cost(header: mdl.Header) -> tuple[str, str]:
+def total_cost(header: HeaderV3) -> tuple[str, str]:
     """
     Autocorrect the total cost to the sum of material cost and overhead cost.
 
@@ -305,7 +315,7 @@ def total_cost(header: mdl.Header) -> tuple[str, str]:
         material_cost_in = parser.parse_to_float(header.material_cost)
     except ValueError as err:
         raise ValueError(ERR_FLOAT_PARSE.format(
-            field=mdl.HeaderFields.MATERIAL_COST,
+            field=HeaderLabelsV3.MATERIAL_COST,
             value=header.material_cost,
             reason=err)
         )
@@ -314,7 +324,7 @@ def total_cost(header: mdl.Header) -> tuple[str, str]:
         overhead_cost_in = parser.parse_to_float(header.overhead_cost)
     except ValueError as err:
         raise ValueError(ERR_FLOAT_PARSE.format(
-            field=mdl.HeaderFields.MATERIAL_COST,
+            field=HeaderLabelsV3.MATERIAL_COST,
             value=header.material_cost,
             reason=err)
         )
@@ -322,7 +332,7 @@ def total_cost(header: mdl.Header) -> tuple[str, str]:
         total_cost_in = parser.parse_to_float(header.total_cost)
     except ValueError as err:
         raise ValueError(ERR_FLOAT_PARSE.format(
-            field=mdl.HeaderFields.MATERIAL_COST,
+            field=HeaderLabelsV3.MATERIAL_COST,
             value=header.material_cost,
             reason=err)
         )
@@ -333,7 +343,7 @@ def total_cost(header: mdl.Header) -> tuple[str, str]:
     if not helper.floats_equal(total_cost_in, total_cost_out):
         str_out = str(total_cost_out)
         change_log = TEMPLATE_AUTOCORRECT_MSG.format(
-            field=mdl.HeaderFields.TOTAL_COST,
+            field=HeaderLabelsV3.TOTAL_COST,
             before=total_cost_in,
             after=total_cost_out,
             reason=LOG_TOTAL_COST_CHANGE

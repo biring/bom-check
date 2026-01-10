@@ -46,11 +46,21 @@ _MATERIAL_COST_CALC_RULE: str = "'{a}' must be equal to the aggregate of '{b}'. 
 _TOTAL_COST_CALC_RULE: str = "'{a}' must be equal to the sum of '{b}' = '{c}' and '{d}' = '{e}'. "
 
 import src.utils as utils
-from src.models import interfaces as model
+
 from src.approve import _common as common
 
+from src.models.interfaces import (
+    RowV3,
+    HeaderV3,
+)
 
-def quantity_zero(row: model.Row) -> None:
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
+
+
+def quantity_zero(row: RowV3) -> None:
     """
     Validate quantity is zero when item is blank.
 
@@ -76,17 +86,17 @@ def quantity_zero(row: model.Row) -> None:
     if row.item == "" and qty != 0.0:
         raise ValueError(
             _VALUE_ERROR.format(
-                a=model.RowFields.QTY,
+                a=TableLabelsV3.QUANTITY,
                 b=row.qty,
             )
             + _QTY_ZERO_RULE.format(
-                a=model.RowFields.QTY,
-                b=model.RowFields.ITEM,
+                a=TableLabelsV3.QUANTITY,
+                b=TableLabelsV3.ITEM,
             )
         )
 
 
-def designator_required(row: model.Row) -> None:
+def designator_required(row: RowV3) -> None:
     """
     Validate designator is specified when quantity is an integer more than zero.
 
@@ -109,21 +119,21 @@ def designator_required(row: model.Row) -> None:
         return
 
     # Rule: if integer quantity > 0, designator must be specified (non-empty)
-    if qty >= 1 and row.designator == "":
+    if qty >= 1 and row.designators == "":
         raise ValueError(
             _VALUE_ERROR.format(
-                a=model.RowFields.DESIGNATOR,
-                b=row.designator,
+                a=TableLabelsV3.DESIGNATORS,
+                b=row.designators,
             )
             + _DESIGNATOR_REQUIRED_RULE.format(
-                a=model.RowFields.DESIGNATOR,
-                b=model.RowFields.QTY,
+                a=TableLabelsV3.DESIGNATORS,
+                b=TableLabelsV3.QUANTITY,
                 c=row.qty,
             )
         )
 
 
-def designator_count(row: model.Row) -> None:
+def designator_count(row: RowV3) -> None:
     """
     Validate the comma-separated designator count equals quantity when quantity is a greater than zero integer.
 
@@ -141,7 +151,7 @@ def designator_count(row: model.Row) -> None:
     # Validate cell values
     try:
         integer_qty = utils.parser.parse_to_integer(row.qty)
-        designators = [d.strip() for d in row.designator.split(",") if d.strip()]
+        designators = [d.strip() for d in row.designators.split(",") if d.strip()]
         designator_count = len(designators)
 
     except ValueError:
@@ -152,19 +162,19 @@ def designator_count(row: model.Row) -> None:
     if integer_qty > 0 and integer_qty != designator_count:
         raise ValueError(
             _VALUE_ERROR.format(
-                a=model.RowFields.DESIGNATOR,
-                b=row.designator,
+                a=TableLabelsV3.DESIGNATORS,
+                b=row.designators,
             )
             + _DESIGNATOR_COUNT_RULE.format(
-                a=model.RowFields.DESIGNATOR,
-                b=row.designator,
-                c=model.RowFields.QTY,
+                a=TableLabelsV3.DESIGNATORS,
+                b=row.designators,
+                c=TableLabelsV3.QUANTITY,
                 d=row.qty,
             )
         )
 
 
-def unit_price_specified(row: model.Row):
+def unit_price_specified(row: RowV3):
     """
     Validate the unit price is greater than zero when quantity is greater than zero.
 
@@ -191,18 +201,18 @@ def unit_price_specified(row: model.Row):
     if qty > 0.0 >= unit_price:
         raise ValueError(
             _VALUE_ERROR.format(
-                a=model.RowFields.UNIT_PRICE,
+                a=TableLabelsV3.UNIT_PRICE,
                 b=row.unit_price,
             )
             + _UNIT_PRICE_SPECIFIED_RULE.format(
-                a=model.RowFields.UNIT_PRICE,
-                b=model.RowFields.QTY,
+                a=TableLabelsV3.UNIT_PRICE,
+                b=TableLabelsV3.QUANTITY,
                 c=row.qty,
             )
         )
 
 
-def subtotal_zero(row: model.Row):
+def subtotal_zero(row: RowV3):
     """
     Validate the sub-total is zero when quantity is zero.
 
@@ -229,18 +239,18 @@ def subtotal_zero(row: model.Row):
     if qty == 0.0 and sub_total != 0.0:
         raise ValueError(
             _VALUE_ERROR.format(
-                a=model.RowFields.SUB_TOTAL,
+                a=TableLabelsV3.SUB_TOTAL,
                 b=row.sub_total,
             )
             + _SUB_TOTAL_ZERO_RULE.format(
-                a=model.RowFields.SUB_TOTAL,
-                b=model.RowFields.QTY,
+                a=TableLabelsV3.SUB_TOTAL,
+                b=TableLabelsV3.QUANTITY,
                 c=row.qty,
             )
         )
 
 
-def sub_total_calculation(row: model.Row) -> None:
+def sub_total_calculation(row: RowV3) -> None:
     """
     Validate the sub-total is the product of quantity and unit price.
 
@@ -268,20 +278,20 @@ def sub_total_calculation(row: model.Row) -> None:
     if not common.floats_equal(sub_total, qty * unit_price):
         raise ValueError(
             _VALUE_ERROR.format(
-                a=model.RowFields.SUB_TOTAL,
+                a=TableLabelsV3.SUB_TOTAL,
                 b=row.sub_total,
             )
             + _SUB_TOTAL_CALC_RULE.format(
-                a=model.RowFields.SUB_TOTAL,
-                b=model.RowFields.QTY,
+                a=TableLabelsV3.SUB_TOTAL,
+                b=TableLabelsV3.QUANTITY,
                 c=row.qty,
-                d=model.RowFields.UNIT_PRICE,
+                d=TableLabelsV3.UNIT_PRICE,
                 e=row.unit_price,
             )
         )
 
 
-def material_cost_calculation(rows: list[model.Row], header: model.Header) -> None:
+def material_cost_calculation(rows: list[RowV3], header: HeaderV3) -> None:
     """
     Validate the material cost is the aggregate of all sub-totals.
 
@@ -320,17 +330,17 @@ def material_cost_calculation(rows: list[model.Row], header: model.Header) -> No
     if not common.floats_equal(material_cost, aggregate_sub_totals):
         raise ValueError(
             _VALUE_ERROR.format(
-                a=model.HeaderFields.MATERIAL_COST,
+                a=HeaderLabelsV3.MATERIAL_COST,
                 b=header.material_cost,
             )
             + _MATERIAL_COST_CALC_RULE.format(
-                a=model.HeaderFields.MATERIAL_COST,
-                b=model.RowFields.SUB_TOTAL,
+                a=HeaderLabelsV3.MATERIAL_COST,
+                b=TableLabelsV3.SUB_TOTAL,
             )
         )
 
 
-def total_cost_calculation(header: model.Header) -> None:
+def total_cost_calculation(header: HeaderV3) -> None:
     """
     Validate the total cost is the sum of material cost and overhead cost.
 
@@ -358,14 +368,14 @@ def total_cost_calculation(header: model.Header) -> None:
     if not common.floats_equal(total_cost, material_cost + overhead_cost):
         raise ValueError(
             _VALUE_ERROR.format(
-                a=model.HeaderFields.TOTAL_COST,
+                a=HeaderLabelsV3.TOTAL_COST,
                 b=header.total_cost,
             )
             + _TOTAL_COST_CALC_RULE.format(
-                a=model.HeaderFields.TOTAL_COST,
-                b=model.HeaderFields.MATERIAL_COST,
+                a=HeaderLabelsV3.TOTAL_COST,
+                b=HeaderLabelsV3.MATERIAL_COST,
                 c=header.material_cost,
-                d=model.HeaderFields.OVERHEAD_COST,
+                d=HeaderLabelsV3.OVERHEAD_COST,
                 e=header.overhead_cost,
             )
         )

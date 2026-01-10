@@ -25,7 +25,15 @@ import unittest
 from dataclasses import replace
 from unittest.mock import patch
 from src.common import ChangeLog
-from src.models import interfaces as mdl
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
+from src.models.interfaces import (
+    HeaderV3AttrNames,
+    RowV3AttrNames,
+)
 from src.cli import interfaces as cli  # for patch at interface
 # noinspection PyProtectedMember
 from src.fixer import _v3_bom as fb  # Direct internal import — acceptable in tests
@@ -144,12 +152,11 @@ class TestFixHeaderManual(unittest.TestCase):
         """
         # ARRANGE
         cases = [
-            (mdl.HeaderFields.MODEL_NUMBER, replace(bf.HEADER_A, model_no="#")),
-            (mdl.HeaderFields.BOARD_NAME, replace(bf.HEADER_A, board_name="#")),
+            (HeaderLabelsV3.MODEL_NO, HeaderV3AttrNames.MODEL_NO, replace(bf.HEADER_A, model_no="#")),
+            (HeaderLabelsV3.BOARD_NAME, HeaderV3AttrNames.BOARD_NAME, replace(bf.HEADER_A, board_name="#")),
         ]
 
-        for label, header_in in cases:
-            attr_name = mdl.Header.get_attr_name_by_label(label)
+        for label, attr_name, header_in in cases:
             prompt_response = getattr(bf.HEADER_A, attr_name)
 
             with (
@@ -243,14 +250,20 @@ class TestFixHeaderAuto(unittest.TestCase):
         """
         # ARRANGE
         cases = [
-            (mdl.HeaderFields.MATERIAL_COST,
-             replace(bf.BOARD_A, header=replace(bf.BOARD_A.header, material_cost="99"))),
-            (mdl.HeaderFields.TOTAL_COST, replace(bf.BOARD_A, header=replace(bf.BOARD_A.header, total_cost="99"))),
+            (
+                HeaderLabelsV3.MATERIAL_COST,
+                HeaderV3AttrNames.MATERIAL_COST,
+                replace(bf.BOARD_A, header=replace(bf.BOARD_A.header, material_cost="99"))
+            ),
+            (
+                HeaderLabelsV3.TOTAL_COST,
+                HeaderV3AttrNames.TOTAL_COST,
+                replace(bf.BOARD_A, header=replace(bf.BOARD_A.header, total_cost="99"))
+            ),
         ]
 
-        for label, board_in in cases:
+        for label, attr_name, board_in in cases:
             header_in = board_in.header
-            attr_name = mdl.Header.get_attr_name_by_label(label)
             prompt_response = getattr(header_in, attr_name)
 
             with (
@@ -341,24 +354,23 @@ class TestFixRowManual(unittest.TestCase):
         """
         # ARRANGE
         cases = [
-            (mdl.RowFields.ITEM, replace(bf.ROW_A_1, item="?")),
-            (mdl.RowFields.COMPONENT, replace(bf.ROW_A_1, component_type="?")),
-            (mdl.RowFields.PACKAGE, replace(bf.ROW_A_1, device_package="?")),
-            (mdl.RowFields.DESCRIPTION, replace(bf.ROW_A_1, description="")),
-            (mdl.RowFields.UNITS, replace(bf.ROW_A_1, unit="?")),
-            (mdl.RowFields.CLASSIFICATION, replace(bf.ROW_A_1, classification="?")),
-            (mdl.RowFields.MANUFACTURER, replace(bf.ROW_A_1, manufacturer="?")),
-            (mdl.RowFields.MFG_PART_NO, replace(bf.ROW_A_1, mfg_part_number="?")),
-            (mdl.RowFields.UL_VDE_NUMBER, replace(bf.ROW_A_1, ul_vde_number="?")),
-            (mdl.RowFields.VALIDATED_AT, replace(bf.ROW_A_1, validated_at="?")),
-            (mdl.RowFields.QTY, replace(bf.ROW_A_1, qty="?")),
-            (mdl.RowFields.DESIGNATOR, replace(bf.ROW_A_1, designator="?")),
-            (mdl.RowFields.UNIT_PRICE, replace(bf.ROW_A_1, unit_price="?")),
+            (TableLabelsV3.ITEM, RowV3AttrNames.ITEM, replace(bf.ROW_A_1, item="?")),
+            (TableLabelsV3.COMPONENT_TYPE, RowV3AttrNames.COMPONENT_TYPE, replace(bf.ROW_A_1, component_type="?")),
+            (TableLabelsV3.DEVICE_PACKAGE, RowV3AttrNames.DEVICE_PACKAGE, replace(bf.ROW_A_1, device_package="?")),
+            (TableLabelsV3.DESCRIPTION, RowV3AttrNames.DESCRIPTION, replace(bf.ROW_A_1, description="")),
+            (TableLabelsV3.UNITS, RowV3AttrNames.UNITS, replace(bf.ROW_A_1, units="?")),
+            (TableLabelsV3.CLASSIFICATION, RowV3AttrNames.CLASSIFICATION, replace(bf.ROW_A_1, classification="?")),
+            (TableLabelsV3.MFG_NAME, RowV3AttrNames.MFG_NAME, replace(bf.ROW_A_1, mfg_name="?")),
+            (TableLabelsV3.MFG_PART_NO, RowV3AttrNames.MFG_PART_NO, replace(bf.ROW_A_1, mfg_part_number="?")),
+            (TableLabelsV3.UL_VDE_NO, RowV3AttrNames.UL_VDE_NO, replace(bf.ROW_A_1, ul_vde_number="?")),
+            (TableLabelsV3.VALIDATED_AT, RowV3AttrNames.VALIDATED_AT, replace(bf.ROW_A_1, validated_at="?")),
+            (TableLabelsV3.QUANTITY, RowV3AttrNames.QTY, replace(bf.ROW_A_1, qty="?")),
+            (TableLabelsV3.DESIGNATORS, RowV3AttrNames.DESIGNATORS, replace(bf.ROW_A_1, designators="?")),
+            (TableLabelsV3.UNIT_PRICE, RowV3AttrNames.UNIT_PRICE, replace(bf.ROW_A_1, unit_price="?")),
         ]
 
-        for label, row_in in cases:
+        for label, attr_name, row_in in cases:
             self.setUp()
-            attr_name = mdl.Row.get_attr_name_by_label(label)
             prompt_response = getattr(bf.ROW_A_1, attr_name)
 
             with (
@@ -388,9 +400,8 @@ class TestFixRowManual(unittest.TestCase):
         Should raise ValueError when row reconstruction fails during manual corrections.
         """
         # ARRANGE
-        label = mdl.RowFields.ITEM
         row = replace(bf.ROW_A_1, item="?")
-        attr_name = mdl.Row.get_attr_name_by_label(label)
+        attr_name = RowV3AttrNames.ITEM
         prompt_response = getattr(bf.ROW_A_1, attr_name)
         expected = ValueError.__name__
 
@@ -451,14 +462,14 @@ class TestFixRowAuto(unittest.TestCase):
         """
         # ARRANGE
         cases = [
-            (mdl.RowFields.COMPONENT, replace(bf.ROW_A_1, component_type="SMD Resistor")),
-            (mdl.RowFields.DESIGNATOR, replace(bf.ROW_A_1, designator="R1-R2")),
-            (mdl.RowFields.SUB_TOTAL, replace(bf.ROW_A_1, sub_total="999")),
+            (TableLabelsV3.COMPONENT_TYPE, RowV3AttrNames.COMPONENT_TYPE,
+             replace(bf.ROW_A_1, component_type="SMD Resistor")),
+            (TableLabelsV3.DESIGNATORS, RowV3AttrNames.DESIGNATORS, replace(bf.ROW_A_1, designators="R1-R2")),
+            (TableLabelsV3.SUB_TOTAL, RowV3AttrNames.SUB_TOTAL, replace(bf.ROW_A_1, sub_total="999")),
         ]
 
-        for label, row_in in cases:
+        for label, attr_name, row_in in cases:
             self.setUp()
-            attr_name = mdl.Row.get_attr_name_by_label(label)
             prompt_response = getattr(bf.ROW_A_1, attr_name)
 
             with (

@@ -99,7 +99,7 @@ class TestExtractBuildStage(unittest.TestCase):
         Should raise ValueError when BOM contains no boards.
         """
         # ARRANGE
-        empty_bom = dep.model.Bom(boards=())
+        empty_bom = dep.model.BomV3(boards=())
         expected = ValueError.__name__
 
         # ACT
@@ -139,7 +139,7 @@ class TestExtractModelNumber(unittest.TestCase):
         Should raise ValueError when BOM contains no boards.
         """
         # ARRANGE
-        empty_bom = dep.model.Bom(boards=())
+        empty_bom = dep.model.BomV3(boards=())
         expected = ValueError.__name__
 
         # ACT
@@ -234,7 +234,7 @@ class TestBuildCheckerLogFilename(unittest.TestCase):
         Should raise an error when required BOM metadata cannot be extracted.
         """
         # ARRANGE
-        empty_bom = builder.model.Bom(boards=())
+        empty_bom = builder.model.BomV3(boards=())
         expected = RuntimeError.__name__
 
         # ACT

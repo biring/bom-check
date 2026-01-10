@@ -30,7 +30,10 @@ License:
 
 import unittest
 
-from src.models import interfaces as models
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
 # noinspection PyProtectedMember
 from src.review import _header as review  # Direct internal import — acceptable in tests
 from tests.fixtures import v3_value as vfx
@@ -63,7 +66,7 @@ class TestModelNumber(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = vfx.MODEL_NO_BAD
-        expected = models.HeaderFields.MODEL_NUMBER
+        expected = HeaderLabelsV3.MODEL_NO
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -105,7 +108,7 @@ class TestBoardName(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = vfx.BOARD_NAME_BAD
-        expected = models.HeaderFields.BOARD_NAME
+        expected = HeaderLabelsV3.BOARD_NAME
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -147,7 +150,7 @@ class TestBoardSupplier(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = vfx.BOARD_SUPPLIER_BAD
-        expected = models.HeaderFields.BOARD_SUPPLIER
+        expected = HeaderLabelsV3.BOARD_SUPPLIER
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -189,7 +192,7 @@ class TestBuildStage(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = vfx.BUILD_STAGE_BAD
-        expected = models.HeaderFields.BUILD_STAGE
+        expected = HeaderLabelsV3.BUILD_STAGE
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -231,7 +234,7 @@ class TestBomDate(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = vfx.BOM_DATE_BAD
-        expected = models.HeaderFields.BOM_DATE
+        expected = HeaderLabelsV3.BOM_DATE
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -273,7 +276,7 @@ class TestMaterialCost(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = vfx.COST_BAD
-        expected = models.HeaderFields.MATERIAL_COST
+        expected = HeaderLabelsV3.MATERIAL_COST
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -315,7 +318,7 @@ class TestOverheadCost(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = vfx.COST_BAD
-        expected = models.HeaderFields.OVERHEAD_COST
+        expected = HeaderLabelsV3.OVERHEAD_COST
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -357,7 +360,7 @@ class TestTotalCost(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = vfx.COST_BAD
-        expected = models.HeaderFields.TOTAL_COST
+        expected = HeaderLabelsV3.TOTAL_COST
         expected_size = len(expected)
 
         for value in invalid_values:

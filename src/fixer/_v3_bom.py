@@ -30,23 +30,31 @@ __all__ = []  # Internal-only; not part of public API. Star import from this mod
 
 from dataclasses import replace
 
-from src.models.interfaces import Row, Header, Board, Bom, RowFields, HeaderFields
+from src.models.interfaces import (
+    BomV3,
+    BoardV3,
+    HeaderV3,
+    HeaderV3AttrNames,
+    RowV3,
+    RowV3AttrNames,
+)
+
 from src.correction import interfaces as correct
 
 from src.common import ChangeLog
 
 
-def fix_v3_bom(bom: Bom) -> tuple[Bom, tuple[str, ...]]:
+def fix_v3_bom(bom: BomV3) -> tuple[BomV3, tuple[str, ...]]:
     """
     Apply manual and automatic field corrections across all boards, headers, and rows in a Version 3 BOM.
 
     Traverses every `Board` in the provided `Bom`, invokes field-level fixers for each `Row` and `Header`, and rebuilds corrected dataclass instances. Collects a contextual `ChangeLog` keyed by file, sheet, and section for full audit traceability.
 
     Args:
-        bom (Bom): Input BOM object containing nested boards, headers, and rows to fix.
+        bom (BomV3): Input BOM object containing nested boards, headers, and rows to fix.
 
     Returns:
-        tuple[Bom, tuple[str, ...]]: A tuple containing the corrected BOM and a tuple of formatted log entries (one per detected or applied change).
+        tuple[BomV3, tuple[str, ...]]: A tuple containing the corrected BOM and a tuple of formatted log entries (one per detected or applied change).
 
     Raises:
         ValueError: If reconstruction of any row, header, or board fails due to invalid mappings.
@@ -56,7 +64,7 @@ def fix_v3_bom(bom: Bom) -> tuple[Bom, tuple[str, ...]]:
     change_log.set_module_name("fixer")
     change_log.set_file_name(bom.file_name)
 
-    fixed_boards: list[Board] = []
+    fixed_boards: list[BoardV3] = []
 
     # --- For each board in the BOM ---
     for board in bom.boards:
@@ -64,9 +72,9 @@ def fix_v3_bom(bom: Bom) -> tuple[Bom, tuple[str, ...]]:
         change_log.set_sheet_name(board.sheet_name)
 
         # --- Fix rows ---
-        fixed_rows: list[Row] = []
+        fixed_rows: list[RowV3] = []
         for idx, raw_row in enumerate(board.rows, start=1):
-            change_log.set_section_name(Row.__name__ + ": " + str(idx))
+            change_log.set_section_name(RowV3.__name__ + ": " + str(idx))
 
             # Apply manual fixers first (user-dependent), then automatic fixers
             fixed_row_manual = _fix_row_manual(change_log, raw_row)
@@ -74,18 +82,19 @@ def fix_v3_bom(bom: Bom) -> tuple[Bom, tuple[str, ...]]:
             fixed_rows.append(fixed_row_auto)
 
         # --- Fix header ---
-        change_log.set_section_name(Header.__name__)
+        change_log.set_section_name(HeaderV3.__name__)
 
         # Apply manual header fixes before auto-calculated fields like cost
         fixed_header_manual = _fix_header_manual(change_log, board.header)
-        fixed_board_manual: Board = Board(header=fixed_header_manual, rows=tuple(fixed_rows),
-                                          sheet_name=board.sheet_name)
+        fixed_board_manual: BoardV3 = BoardV3(header=fixed_header_manual, rows=tuple(fixed_rows),
+                                              sheet_name=board.sheet_name)
         fixed_header_auto = _fix_header_auto(change_log, fixed_board_manual)
-        fixed_board_auto: Board = Board(header=fixed_header_auto, rows=tuple(fixed_rows), sheet_name=board.sheet_name)
+        fixed_board_auto: BoardV3 = BoardV3(header=fixed_header_auto, rows=tuple(fixed_rows),
+                                            sheet_name=board.sheet_name)
         fixed_boards.append(fixed_board_auto)
 
     # Collect all cleaned boards and reconstruct final BOM
-    fixed_bom: Bom = Bom(boards=tuple(fixed_boards), file_name=bom.file_name)
+    fixed_bom: BomV3 = BomV3(boards=tuple(fixed_boards), file_name=bom.file_name)
 
     # Extract full log snapshot for external reporting
     frozen_change_log = change_log.render()
@@ -93,36 +102,35 @@ def fix_v3_bom(bom: Bom) -> tuple[Bom, tuple[str, ...]]:
     return fixed_bom, frozen_change_log
 
 
-def _fix_header_manual(change_log: ChangeLog, header: Header) -> Header:
+def _fix_header_manual(change_log: ChangeLog, header: HeaderV3) -> HeaderV3:
     """
     Apply manual header corrections in a defined order and append any resulting messages to the change-log.
 
     Args:
         change_log (ChangeLog): Context-aware collector for change messages.
-        header (Header): Header instance to correct.
+        header (HeaderV3): Header instance to correct.
 
     Returns:
-        Header: A new header with manual fixes applied.
+        HeaderV3: A new header with manual fixes applied.
 
     Raises:
         ValueError: If corrected values cannot be mapped back to header fields.
     """
-    # Define ordered header cleaning sequence (function, label)
+    # Define ordered header cleaning sequence (function, attribute name)
     cases = [
-        (correct.model_number, HeaderFields.MODEL_NUMBER),
-        (correct.board_name, HeaderFields.BOARD_NAME),
-        (correct.board_supplier, HeaderFields.BOARD_SUPPLIER),
-        (correct.build_stage, HeaderFields.BUILD_STAGE),
-        (correct.bom_date, HeaderFields.BOM_DATE),
-        (correct.overhead_cost, HeaderFields.OVERHEAD_COST),
+        (correct.model_number, HeaderV3AttrNames.MODEL_NO),
+        (correct.board_name, HeaderV3AttrNames.BOARD_NAME),
+        (correct.board_supplier, HeaderV3AttrNames.BOARD_SUPPLIER),
+        (correct.build_stage, HeaderV3AttrNames.BUILD_STAGE),
+        (correct.bom_date, HeaderV3AttrNames.BOM_DATE),
+        (correct.overhead_cost, HeaderV3AttrNames.OVERHEAD_COST),
     ]
 
     attr_name = None
 
     # Apply fix for each field and collect logs
-    for fn, label in cases:
+    for fn, attr_name in cases:
         try:
-            attr_name = Header.get_attr_name_by_label(label)
             original_value = getattr(header, attr_name)
             result_value, result_log = fn(header)
 
@@ -136,16 +144,16 @@ def _fix_header_manual(change_log: ChangeLog, header: Header) -> Header:
     return header
 
 
-def _fix_header_auto(change_log: ChangeLog, board: Board) -> Header:
+def _fix_header_auto(change_log: ChangeLog, board: BoardV3) -> HeaderV3:
     """
     Apply automatic header corrections (e.g., computed costs) based on board context and append messages to the change-log.
 
     Args:
         change_log (ChangeLog): Context-aware collector for change messages.
-        board (Board): Board providing header and row context for computed fields.
+        board (BoardV3): Board providing header and row context for computed fields.
 
     Returns:
-        Header: A new header with automatic fixes applied.
+        HeaderV3: A new header with automatic fixes applied.
 
     Raises:
         ValueError: If corrected values cannot be mapped back to header fields.
@@ -155,8 +163,7 @@ def _fix_header_auto(change_log: ChangeLog, board: Board) -> Header:
 
     # 1. Fix material cost math
     try:
-        label = HeaderFields.MATERIAL_COST
-        attr_name = Header.get_attr_name_by_label(label)
+        attr_name = HeaderV3AttrNames.MATERIAL_COST
         original_value = getattr(header, attr_name)
         result_value, result_log = correct.material_cost(board)
 
@@ -170,8 +177,7 @@ def _fix_header_auto(change_log: ChangeLog, board: Board) -> Header:
 
     # 2. Fix total cost math
     try:
-        label = HeaderFields.TOTAL_COST
-        attr_name = Header.get_attr_name_by_label(label)
+        attr_name = HeaderV3AttrNames.TOTAL_COST
         original_value = getattr(header, attr_name)
         result_value, result_log = correct.total_cost(header)
 
@@ -185,43 +191,42 @@ def _fix_header_auto(change_log: ChangeLog, board: Board) -> Header:
     return header
 
 
-def _fix_row_manual(change_log: ChangeLog, row: Row) -> Row:
+def _fix_row_manual(change_log: ChangeLog, row: RowV3) -> RowV3:
     """
     Apply manual row corrections in a defined order and append messages for any detected or applied changes.
 
     Args:
         change_log (ChangeLog): Context-aware collector for change messages.
-        row (Row): Row instance to correct.
+        row (RowV3): Row instance to correct.
 
     Returns:
-        Row: A new row with manual fixes applied.
+        RowV3: A new row with manual fixes applied.
 
     Raises:
         ValueError: If corrected values cannot be mapped back to row fields.
     """
-    # Define ordered header cleaning sequence (function, label)
+    # Define ordered header cleaning sequence (function, attribute name)
     cases = [
-        (correct.item, RowFields.ITEM),
-        (correct.component_type, RowFields.COMPONENT),
-        (correct.device_package, RowFields.PACKAGE),
-        (correct.description, RowFields.DESCRIPTION),
-        (correct.unit, RowFields.UNITS),
-        (correct.classification, RowFields.CLASSIFICATION),
-        (correct.manufacturer, RowFields.MANUFACTURER),
-        (correct.mfg_part_number, RowFields.MFG_PART_NO),
-        (correct.ul_vde_number, RowFields.UL_VDE_NUMBER),
-        (correct.validated_at, RowFields.VALIDATED_AT),
-        (correct.qty, RowFields.QTY),
-        (correct.designator, RowFields.DESIGNATOR),
-        (correct.unit_price, RowFields.UNIT_PRICE),
+        (correct.item, RowV3AttrNames.ITEM),
+        (correct.component_type, RowV3AttrNames.COMPONENT_TYPE),
+        (correct.device_package, RowV3AttrNames.DEVICE_PACKAGE),
+        (correct.description, RowV3AttrNames.DESCRIPTION),
+        (correct.unit, RowV3AttrNames.UNITS),
+        (correct.classification, RowV3AttrNames.CLASSIFICATION),
+        (correct.manufacturer, RowV3AttrNames.MFG_NAME),
+        (correct.mfg_part_number, RowV3AttrNames.MFG_PART_NO),
+        (correct.ul_vde_number, RowV3AttrNames.UL_VDE_NO),
+        (correct.validated_at, RowV3AttrNames.VALIDATED_AT),
+        (correct.qty, RowV3AttrNames.QTY),
+        (correct.designator, RowV3AttrNames.DESIGNATORS),
+        (correct.unit_price, RowV3AttrNames.UNIT_PRICE),
     ]
 
     attr_name = None
 
     # Apply fix for each field and collect logs
-    for fn, label in cases:
+    for fn, attr_name in cases:
         try:
-            attr_name = Row.get_attr_name_by_label(label)
             original_value = getattr(row, attr_name)
             result_value, result_log = fn(row)
 
@@ -235,33 +240,32 @@ def _fix_row_manual(change_log: ChangeLog, row: Row) -> Row:
     return row
 
 
-def _fix_row_auto(change_log: ChangeLog, row: Row) -> Row:
+def _fix_row_auto(change_log: ChangeLog, row: RowV3) -> RowV3:
     """
     Apply automatic row corrections (e.g., lookups, expansions, and computed totals) and append messages to the change-log.
 
     Args:
         change_log (ChangeLog): Context-aware collector for change messages.
-        row (Row): Row instance to correct.
+        row (RowV3): Row instance to correct.
 
     Returns:
-        Row: A new row with automatic fixes applied.
+        RowV3: A new row with automatic fixes applied.
 
     Raises:
         ValueError: If corrected values cannot be mapped back to row fields.
     """
-    # Define ordered header cleaning sequence (function, value, attribute)
+    # Define ordered header cleaning sequence (function, attribute name)
     cases = [
-        (correct.component_type_lookup, RowFields.COMPONENT),
-        (correct.expand_designators, RowFields.DESIGNATOR),
-        (correct.sub_total, RowFields.SUB_TOTAL),
+        (correct.component_type_lookup, RowV3AttrNames.COMPONENT_TYPE),
+        (correct.expand_designators, RowV3AttrNames.DESIGNATORS),
+        (correct.sub_total, RowV3AttrNames.SUB_TOTAL),
     ]
 
     attr_name = None
 
     # Apply fix for each field and collect logs
-    for fn, label in cases:
+    for fn, attr_name in cases:
         try:
-            attr_name = Row.get_attr_name_by_label(label)
             original_value = getattr(row, attr_name)
             result_value, result_log = fn(row)
 

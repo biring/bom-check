@@ -30,22 +30,31 @@ License:
 """
 __all__ = []  # Internal-only; not part of public API.
 
+from src.models.interfaces import (
+    HeaderV3,
+    RowV3,
+)
+
 from src.review import interfaces as review
-from src.models import interfaces as mdl
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
 
 import src.correction._helper as helper
 
 LOG_MANUAL_CHANGE = "Manual change by user."
 
 
-def model_number(header: mdl.Header) -> tuple[str, str]:
+def model_number(header: HeaderV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the header's model number, returning the chosen value and an audit log entry.
 
     Uses a prompt-until-valid loop backed by `review.model_number` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        header (mdl.Header): The BOM header object containing the `model_no` field to validate.
+        header (HeaderV3): The BOM header object containing the `model_no` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_model_number, change_log_line).
@@ -58,12 +67,12 @@ def model_number(header: mdl.Header) -> tuple[str, str]:
         data=str(header),
         fn=review.model_number,
         value=model_number_in,
-        field=mdl.HeaderFields.MODEL_NUMBER
+        field=HeaderLabelsV3.MODEL_NO
     )
 
     # Emit a single, one-line audit trail entry (Field, Before, After, Reason)
     change_log = helper.generate_log_entry(
-        field=mdl.HeaderFields.MODEL_NUMBER,
+        field=HeaderLabelsV3.MODEL_NO,
         before=model_number_in,
         after=model_number_out,
         reason=LOG_MANUAL_CHANGE
@@ -72,14 +81,14 @@ def model_number(header: mdl.Header) -> tuple[str, str]:
     return model_number_out, change_log
 
 
-def board_name(header: mdl.Header) -> tuple[str, str]:
+def board_name(header: HeaderV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the header's board name, returning the chosen value and an audit log entry.
 
     Uses a prompt-until-valid loop backed by `review.board_name` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        header (mdl.Header): The BOM header object containing the `board_name` field to validate.
+        header (HeaderV3): The BOM header object containing the `board_name` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_board_name, change_log_line).
@@ -92,12 +101,12 @@ def board_name(header: mdl.Header) -> tuple[str, str]:
         data=str(header),
         fn=review.board_name,
         value=board_name_in,
-        field=mdl.HeaderFields.BOARD_NAME
+        field=HeaderLabelsV3.BOARD_NAME
     )
 
     # Emit a single, one-line audit trail entry (Field, Before, After, Reason)
     change_log = helper.generate_log_entry(
-        field=mdl.HeaderFields.BOARD_NAME,
+        field=HeaderLabelsV3.BOARD_NAME,
         before=board_name_in,
         after=board_name_out,
         reason=LOG_MANUAL_CHANGE
@@ -106,32 +115,32 @@ def board_name(header: mdl.Header) -> tuple[str, str]:
     return board_name_out, change_log
 
 
-def board_supplier(header: mdl.Header) -> tuple[str, str]:
+def board_supplier(header: HeaderV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the header's board supplier, returning the chosen value and an audit log entry.
 
     Uses a prompt-until-valid loop backed by `review.board_supplier` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        header (mdl.Header): The BOM header object containing the `board_supplier` field to validate.
+        header (HeaderV3): The BOM header object containing the `board_supplier` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_board_supplier, change_log_line).
     """
 
-    board_supplier_in = header.manufacturer
+    board_supplier_in = header.board_supplier
 
     # Loop: prompt user until `review.board_supplier` accepts the value
     board_supplier_out = helper.prompt_until_valid(
         data=str(header),
         fn=review.board_supplier,
         value=board_supplier_in,
-        field=mdl.HeaderFields.BOARD_SUPPLIER
+        field=HeaderLabelsV3.BOARD_SUPPLIER
     )
 
     # Emit a single, one-line audit trail entry (Field, Before, After, Reason)
     change_log = helper.generate_log_entry(
-        field=mdl.HeaderFields.BOARD_SUPPLIER,
+        field=HeaderLabelsV3.BOARD_SUPPLIER,
         before=board_supplier_in,
         after=board_supplier_out,
         reason=LOG_MANUAL_CHANGE
@@ -140,14 +149,14 @@ def board_supplier(header: mdl.Header) -> tuple[str, str]:
     return board_supplier_out, change_log
 
 
-def build_stage(header: mdl.Header) -> tuple[str, str]:
+def build_stage(header: HeaderV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the header's build stage, returning the chosen value and an audit log entry.
 
     Uses a prompt-until-valid loop backed by `review.build_stage` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        header (mdl.Header): The BOM header object containing the `build_stage` field to validate.
+        header (HeaderV3): The BOM header object containing the `build_stage` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_build_stage, change_log_line).
@@ -160,12 +169,12 @@ def build_stage(header: mdl.Header) -> tuple[str, str]:
         data=str(header),
         fn=review.build_stage,
         value=build_stage_in,
-        field=mdl.HeaderFields.BUILD_STAGE
+        field=HeaderLabelsV3.BUILD_STAGE
     )
 
     # Emit a single, one-line audit trail entry (Field, Before, After, Reason)
     change_log = helper.generate_log_entry(
-        field=mdl.HeaderFields.BUILD_STAGE,
+        field=HeaderLabelsV3.BUILD_STAGE,
         before=build_stage_in,
         after=build_stage_out,
         reason=LOG_MANUAL_CHANGE
@@ -174,32 +183,32 @@ def build_stage(header: mdl.Header) -> tuple[str, str]:
     return build_stage_out, change_log
 
 
-def bom_date(header: mdl.Header) -> tuple[str, str]:
+def bom_date(header: HeaderV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the header's date, returning the chosen value and an audit log entry.
 
     Uses a prompt-until-valid loop backed by `review.bom_date` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        header (mdl.Header): The BOM header object containing the `bom_date` field to validate.
+        header (HeaderV3): The BOM header object containing the `bom_date` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_date, change_log_line).
     """
 
-    date_in = header.date
+    date_in = header.bom_date
 
     # Loop: prompt user until `review.bom_date` accepts the value
     date_out = helper.prompt_until_valid(
         data=str(header),
         fn=review.bom_date,
         value=date_in,
-        field=mdl.HeaderFields.BOM_DATE
+        field=HeaderLabelsV3.BOM_DATE
     )
 
     # Emit a single, one-line audit trail entry (Field, Before, After, Reason)
     change_log = helper.generate_log_entry(
-        field=mdl.HeaderFields.BOM_DATE,
+        field=HeaderLabelsV3.BOM_DATE,
         before=date_in,
         after=date_out,
         reason=LOG_MANUAL_CHANGE
@@ -208,14 +217,14 @@ def bom_date(header: mdl.Header) -> tuple[str, str]:
     return date_out, change_log
 
 
-def overhead_cost(header: mdl.Header) -> tuple[str, str]:
+def overhead_cost(header: HeaderV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the header's overhead cost, returning the chosen value and an audit log entry.
 
     Uses a prompt-until-valid loop backed by `review.overhead_cost` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        header (mdl.Header): The BOM header object containing the `overhead_cost` field to validate.
+        header (HeaderV3): The BOM header object containing the `overhead_cost` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_overhead_cost, change_log_line).
@@ -228,12 +237,12 @@ def overhead_cost(header: mdl.Header) -> tuple[str, str]:
         data=str(header),
         fn=review.overhead_cost,
         value=overhead_cost_in,
-        field=mdl.HeaderFields.OVERHEAD_COST
+        field=HeaderLabelsV3.OVERHEAD_COST
     )
 
     # Emit a single, one-line audit trail entry (Field, Before, After, Reason)
     change_log = helper.generate_log_entry(
-        field=mdl.HeaderFields.OVERHEAD_COST,
+        field=HeaderLabelsV3.OVERHEAD_COST,
         before=overhead_cost_in,
         after=overhead_cost_out,
         reason=LOG_MANUAL_CHANGE
@@ -242,14 +251,14 @@ def overhead_cost(header: mdl.Header) -> tuple[str, str]:
     return overhead_cost_out, change_log
 
 
-def item(row: mdl.Row) -> tuple[str, str]:
+def item(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's item value, returning the chosen value and an audit log entry.
 
     Uses a prompt-until-valid loop backed by `review.item` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `item` field to validate.
+        row (RowV3): The BOM row object containing the `item` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_item, change_log_line).
@@ -260,11 +269,11 @@ def item(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.item,
         value=item_in,
-        field=mdl.RowFields.ITEM
+        field=TableLabelsV3.ITEM
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.ITEM,
+        field=TableLabelsV3.ITEM,
         before=item_in,
         after=item_out,
         reason=LOG_MANUAL_CHANGE
@@ -273,14 +282,14 @@ def item(row: mdl.Row) -> tuple[str, str]:
     return item_out, change_log
 
 
-def component_type(row: mdl.Row) -> tuple[str, str]:
+def component_type(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's component type, returning the chosen value and an audit log entry.
 
     Uses a prompt-until-valid loop backed by `review.component_type` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `component_type` field to validate.
+        row (RowV3): The BOM row object containing the `component_type` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_component_type, change_log_line).
@@ -291,11 +300,11 @@ def component_type(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.component_type,
         value=component_type_in,
-        field=mdl.RowFields.COMPONENT
+        field=TableLabelsV3.COMPONENT_TYPE
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.COMPONENT,
+        field=TableLabelsV3.COMPONENT_TYPE,
         before=component_type_in,
         after=component_type_out,
         reason=LOG_MANUAL_CHANGE
@@ -304,14 +313,14 @@ def component_type(row: mdl.Row) -> tuple[str, str]:
     return component_type_out, change_log
 
 
-def device_package(row: mdl.Row) -> tuple[str, str]:
+def device_package(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's device package information.
 
     Uses a prompt-until-valid loop backed by `review.device_package` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `device_package` field to validate.
+        row (RowV3): The BOM row object containing the `device_package` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_device_package, change_log_line).
@@ -322,11 +331,11 @@ def device_package(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.device_package,
         value=device_package_in,
-        field=mdl.RowFields.PACKAGE
+        field=TableLabelsV3.DEVICE_PACKAGE
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.PACKAGE,
+        field=TableLabelsV3.DEVICE_PACKAGE,
         before=device_package_in,
         after=device_package_out,
         reason=LOG_MANUAL_CHANGE
@@ -335,14 +344,14 @@ def device_package(row: mdl.Row) -> tuple[str, str]:
     return device_package_out, change_log
 
 
-def description(row: mdl.Row) -> tuple[str, str]:
+def description(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's part description.
 
     Uses a prompt-until-valid loop backed by `review.description` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `description` field to validate.
+        row (RowV3): The BOM row object containing the `description` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_description, change_log_line).
@@ -353,11 +362,11 @@ def description(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.description,
         value=description_in,
-        field=mdl.RowFields.DESCRIPTION
+        field=TableLabelsV3.DESCRIPTION
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.DESCRIPTION,
+        field=TableLabelsV3.DESCRIPTION,
         before=description_in,
         after=description_out,
         reason=LOG_MANUAL_CHANGE
@@ -366,29 +375,29 @@ def description(row: mdl.Row) -> tuple[str, str]:
     return description_out, change_log
 
 
-def unit(row: mdl.Row) -> tuple[str, str]:
+def unit(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's unit of measure.
 
     Uses a prompt-until-valid loop backed by `review.unit` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `unit` field to validate.
+        row (RowV3): The BOM row object containing the `unit` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_unit, change_log_line).
     """
-    unit_in = row.unit
+    unit_in = row.units
 
     unit_out = helper.prompt_until_valid(
         data=str(row),
         fn=review.units,
         value=unit_in,
-        field=mdl.RowFields.UNITS
+        field=TableLabelsV3.UNITS
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.UNITS,
+        field=TableLabelsV3.UNITS,
         before=unit_in,
         after=unit_out,
         reason=LOG_MANUAL_CHANGE
@@ -397,14 +406,14 @@ def unit(row: mdl.Row) -> tuple[str, str]:
     return unit_out, change_log
 
 
-def classification(row: mdl.Row) -> tuple[str, str]:
+def classification(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's classification field.
 
     Uses a prompt-until-valid loop backed by `review.classification` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `classification` field to validate.
+        row (RowV3): The BOM row object containing the `classification` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_classification, change_log_line).
@@ -415,11 +424,11 @@ def classification(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.classification,
         value=classification_in,
-        field=mdl.RowFields.CLASSIFICATION
+        field=TableLabelsV3.CLASSIFICATION
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.CLASSIFICATION,
+        field=TableLabelsV3.CLASSIFICATION,
         before=classification_in,
         after=classification_out,
         reason=LOG_MANUAL_CHANGE
@@ -428,29 +437,29 @@ def classification(row: mdl.Row) -> tuple[str, str]:
     return classification_out, change_log
 
 
-def manufacturer(row: mdl.Row) -> tuple[str, str]:
+def manufacturer(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's manufacturer name.
 
     Uses a prompt-until-valid loop backed by `review.manufacturer` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `manufacturer` field to validate.
+        row (RowV3): The BOM row object containing the `manufacturer` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_manufacturer, change_log_line).
     """
-    manufacturer_in = row.manufacturer
+    manufacturer_in = row.mfg_name
 
     manufacturer_out = helper.prompt_until_valid(
         data=str(row),
         fn=review.mfg_name,
         value=manufacturer_in,
-        field=mdl.RowFields.MANUFACTURER
+        field=TableLabelsV3.MFG_NAME
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.MANUFACTURER,
+        field=TableLabelsV3.MFG_NAME,
         before=manufacturer_in,
         after=manufacturer_out,
         reason=LOG_MANUAL_CHANGE
@@ -459,14 +468,14 @@ def manufacturer(row: mdl.Row) -> tuple[str, str]:
     return manufacturer_out, change_log
 
 
-def mfg_part_number(row: mdl.Row) -> tuple[str, str]:
+def mfg_part_number(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's manufacturer part number (MPN).
 
     Uses a prompt-until-valid loop backed by `review.mfg.part_number` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `mfg_part_number` field to validate.
+        row (RowV3): The BOM row object containing the `mfg_part_number` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_mfg_part_number, change_log_line).
@@ -477,11 +486,11 @@ def mfg_part_number(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.mfg_part_no,
         value=mfg_part_number_in,
-        field=mdl.RowFields.MFG_PART_NO
+        field=TableLabelsV3.MFG_PART_NO
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.MFG_PART_NO,
+        field=TableLabelsV3.MFG_PART_NO,
         before=mfg_part_number_in,
         after=mfg_part_number_out,
         reason=LOG_MANUAL_CHANGE
@@ -490,14 +499,14 @@ def mfg_part_number(row: mdl.Row) -> tuple[str, str]:
     return mfg_part_number_out, change_log
 
 
-def ul_vde_number(row: mdl.Row) -> tuple[str, str]:
+def ul_vde_number(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's UL/VDE certification number.
 
     Uses a prompt-until-valid loop backed by `review.ul_vde_number` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `ul_vde_number` field to validate.
+        row (RowV3): The BOM row object containing the `ul_vde_number` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_ul_vde_number, change_log_line).
@@ -508,11 +517,11 @@ def ul_vde_number(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.ul_vde_number,
         value=ul_vde_number_in,
-        field=mdl.RowFields.UL_VDE_NUMBER
+        field=TableLabelsV3.UL_VDE_NO
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.UL_VDE_NUMBER,
+        field=TableLabelsV3.UL_VDE_NO,
         before=ul_vde_number_in,
         after=ul_vde_number_out,
         reason=LOG_MANUAL_CHANGE
@@ -521,14 +530,14 @@ def ul_vde_number(row: mdl.Row) -> tuple[str, str]:
     return ul_vde_number_out, change_log
 
 
-def validated_at(row: mdl.Row) -> tuple[str, str]:
+def validated_at(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's validation timestamp or date.
 
     Uses a prompt-until-valid loop backed by `review.validated_at` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `validated_at` field to validate.
+        row (RowV3): The BOM row object containing the `validated_at` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_validated_at, change_log_line).
@@ -539,11 +548,11 @@ def validated_at(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.validated_at,
         value=validated_at_in,
-        field=mdl.RowFields.VALIDATED_AT
+        field=TableLabelsV3.VALIDATED_AT
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.VALIDATED_AT,
+        field=TableLabelsV3.VALIDATED_AT,
         before=validated_at_in,
         after=validated_at_out,
         reason=LOG_MANUAL_CHANGE
@@ -552,14 +561,14 @@ def validated_at(row: mdl.Row) -> tuple[str, str]:
     return validated_at_out, change_log
 
 
-def qty(row: mdl.Row) -> tuple[str, str]:
+def qty(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's quantity field.
 
     Uses a prompt-until-valid loop backed by `review.qty` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `qty` field to validate.
+        row (RowV3): The BOM row object containing the `qty` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_qty, change_log_line).
@@ -570,11 +579,11 @@ def qty(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.quantity,
         value=qty_in,
-        field=mdl.RowFields.QTY
+        field=TableLabelsV3.QUANTITY
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.QTY,
+        field=TableLabelsV3.QUANTITY,
         before=qty_in,
         after=qty_out,
         reason=LOG_MANUAL_CHANGE
@@ -583,29 +592,29 @@ def qty(row: mdl.Row) -> tuple[str, str]:
     return qty_out, change_log
 
 
-def designator(row: mdl.Row) -> tuple[str, str]:
+def designator(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's designator field.
 
     Uses a prompt-until-valid loop backed by `review.designator` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `designator` field to validate.
+        row (RowV3): The BOM row object containing the `designator` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_designator, change_log_line).
     """
-    designator_in = row.designator
+    designator_in = row.designators
 
     designator_out = helper.prompt_until_valid(
         data=str(row),
         fn=review.designator,
         value=designator_in,
-        field=mdl.RowFields.DESIGNATOR
+        field=TableLabelsV3.DESIGNATORS
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.DESIGNATOR,
+        field=TableLabelsV3.DESIGNATORS,
         before=designator_in,
         after=designator_out,
         reason=LOG_MANUAL_CHANGE
@@ -614,14 +623,14 @@ def designator(row: mdl.Row) -> tuple[str, str]:
     return designator_out, change_log
 
 
-def unit_price(row: mdl.Row) -> tuple[str, str]:
+def unit_price(row: RowV3) -> tuple[str, str]:
     """
     Interactively validate and (if needed) correct the row's unit price value.
 
     Uses a prompt-until-valid loop backed by `review.unit_price` to enforce formatting rules, then emits a single-line change log suitable for audit trails.
 
     Args:
-        row (mdl.Row): The BOM row object containing the `unit_price` field to validate.
+        row (RowV3): The BOM row object containing the `unit_price` field to validate.
 
     Returns:
         tuple[str, str]: A 2-tuple of (final_unit_price, change_log_line).
@@ -632,11 +641,11 @@ def unit_price(row: mdl.Row) -> tuple[str, str]:
         data=str(row),
         fn=review.unit_price,
         value=unit_price_in,
-        field=mdl.RowFields.UNIT_PRICE
+        field=TableLabelsV3.UNIT_PRICE
     )
 
     change_log = helper.generate_log_entry(
-        field=mdl.RowFields.UNIT_PRICE,
+        field=TableLabelsV3.UNIT_PRICE,
         before=unit_price_in,
         after=unit_price_out,
         reason=LOG_MANUAL_CHANGE

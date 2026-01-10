@@ -194,7 +194,7 @@ class TestBoardSupplier(_Assert):
         """
         # ARRANGE
         header_in = bfx.BOARD_A.header
-        expected_out = bfx.BOARD_A.header.manufacturer
+        expected_out = bfx.BOARD_A.header.board_supplier
 
         # ACT
         actual_out, log = _act_with_patch(assist.board_supplier, header_in, expected_out)
@@ -210,16 +210,16 @@ class TestBoardSupplier(_Assert):
         # ARRANGE
         header_in = replace(
             bfx.BOARD_A.header,
-            manufacturer="*" + bfx.BOARD_A.header.manufacturer,  # invalid token to force correction
+            board_supplier="*" + bfx.BOARD_A.header.board_supplier,  # invalid token to force correction
         )
-        expected_out = bfx.BOARD_A.header.manufacturer
+        expected_out = bfx.BOARD_A.header.board_supplier
 
         # ACT
         actual_out, log = _act_with_patch(assist.board_supplier, header_in, expected_out)
 
         # ASSERT
         self.assertValueOut(actual_out, expected_out)
-        self.assertLogContains(log, [header_in.manufacturer, expected_out])
+        self.assertLogContains(log, [header_in.board_supplier, expected_out])
 
 
 class TestBuildStage(_Assert):
@@ -272,7 +272,7 @@ class TestBomDate(_Assert):
         """
         # ARRANGE
         header_in = bfx.BOARD_A.header
-        expected_out = bfx.BOARD_A.header.date
+        expected_out = bfx.BOARD_A.header.bom_date
 
         # ACT
         actual_out, log = _act_with_patch(assist.bom_date, header_in, expected_out)
@@ -288,16 +288,16 @@ class TestBomDate(_Assert):
         # ARRANGE
         header_in = replace(
             bfx.BOARD_A.header,
-            date="*" + str(bfx.BOARD_A.header.date),  # invalid token to force correction
+            bom_date="*" + str(bfx.BOARD_A.header.bom_date),  # invalid token to force correction
         )
-        expected_out = bfx.BOARD_A.header.date
+        expected_out = bfx.BOARD_A.header.bom_date
 
         # ACT
         actual_out, log = _act_with_patch(assist.bom_date, header_in, str(expected_out))
 
         # ASSERT
         self.assertValueOut(actual_out, str(expected_out))
-        self.assertLogContains(log, [str(header_in.date), str(expected_out)])
+        self.assertLogContains(log, [str(header_in.bom_date), str(expected_out)])
 
 
 class TestOverheadCost(_Assert):
@@ -475,7 +475,7 @@ class TestUnit(_Assert):
         Should NOT modify the units or generate a log entry when the initial value is already valid.
         """
         row_in = bfx.BOARD_A.rows[0]
-        expected_out = row_in.unit
+        expected_out = row_in.units
 
         actual_out, log = _act_with_patch(assist.unit, row_in, expected_out)
 
@@ -486,13 +486,13 @@ class TestUnit(_Assert):
         """
         Should update the unit and include both the old and new values in the generated change log.
         """
-        row_in = replace(bfx.BOARD_A.rows[0], unit="*" + str(bfx.BOARD_A.rows[0].unit))
-        expected_out = bfx.BOARD_A.rows[0].unit
+        row_in = replace(bfx.BOARD_A.rows[0], units="*" + str(bfx.BOARD_A.rows[0].units))
+        expected_out = bfx.BOARD_A.rows[0].units
 
         actual_out, log = _act_with_patch(assist.unit, row_in, str(expected_out))
 
         self.assertValueOut(actual_out, str(expected_out))
-        self.assertLogContains(log, [str(row_in.unit), str(expected_out)])
+        self.assertLogContains(log, [str(row_in.units), str(expected_out)])
 
 
 class TestClassification(_Assert):
@@ -535,7 +535,7 @@ class TestManufacturer(_Assert):
         Should NOT modify the manufacturer or generate a log entry when the initial value is already valid.
         """
         row_in = bfx.BOARD_A.rows[0]
-        expected_out = row_in.manufacturer
+        expected_out = row_in.mfg_name
 
         actual_out, log = _act_with_patch(assist.manufacturer, row_in, expected_out)
 
@@ -546,13 +546,13 @@ class TestManufacturer(_Assert):
         """
         Should update the manufacturer and include both the old and new values in the generated change log.
         """
-        row_in = replace(bfx.BOARD_A.rows[0], manufacturer="*" + str(bfx.BOARD_A.rows[0].manufacturer))
-        expected_out = bfx.BOARD_A.rows[0].manufacturer
+        row_in = replace(bfx.BOARD_A.rows[0], mfg_name="*" + str(bfx.BOARD_A.rows[0].mfg_name))
+        expected_out = bfx.BOARD_A.rows[0].mfg_name
 
         actual_out, log = _act_with_patch(assist.manufacturer, row_in, str(expected_out))
 
         self.assertValueOut(actual_out, str(expected_out))
-        self.assertLogContains(log, [str(row_in.manufacturer), str(expected_out)])
+        self.assertLogContains(log, [str(row_in.mfg_name), str(expected_out)])
 
 
 class TestMfgPartNumber(_Assert):
@@ -685,7 +685,7 @@ class TestDesignator(_Assert):
         Should NOT modify the designator or generate a log entry when the initial value is already valid.
         """
         row_in = bfx.BOARD_A.rows[0]
-        expected_out = row_in.designator
+        expected_out = row_in.designators
 
         actual_out, log = _act_with_patch(assist.designator, row_in, expected_out)
 
@@ -696,13 +696,13 @@ class TestDesignator(_Assert):
         """
         Should update the designator and include both the old and new values in the generated change log.
         """
-        row_in = replace(bfx.BOARD_A.rows[0], designator="*" + str(bfx.BOARD_A.rows[0].designator))
-        expected_out = bfx.BOARD_A.rows[0].designator
+        row_in = replace(bfx.BOARD_A.rows[0], designators="*" + str(bfx.BOARD_A.rows[0].designators))
+        expected_out = bfx.BOARD_A.rows[0].designators
 
         actual_out, log = _act_with_patch(assist.designator, row_in, str(expected_out))
 
         self.assertValueOut(actual_out, str(expected_out))
-        self.assertLogContains(log, [str(row_in.designator), str(expected_out)])
+        self.assertLogContains(log, [str(row_in.designators), str(expected_out)])
 
 
 class TestUnitPrice(_Assert):

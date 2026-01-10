@@ -147,7 +147,7 @@ class TestCoerceHeader(unittest.TestCase):
         expected = ValueError.__name__
 
         # ACT
-        with patch("src.cleaners._v3_bom.mdl.Header", side_effect=TypeError("bad mapping")):
+        with patch("src.cleaners._v3_bom.map_template_v3_header_to_bom_v3_header", side_effect=TypeError("bad mapping")):
             try:
                 _ = cb._clean_header(log, header)
                 result = ""
@@ -209,7 +209,7 @@ class TestCoerceRow(unittest.TestCase):
         log = ChangeLog()
         expected = ValueError.__name__
         # ACT
-        with patch("src.cleaners._v3_bom.mdl.Row", side_effect=TypeError("bad mapping")):
+        with patch("src.cleaners._v3_bom.map_template_v3_table_to_bom_v3_row", side_effect=TypeError("bad mapping")):
             try:
                 _ = cb._clean_row(log, row)
                 result = ""

@@ -28,7 +28,9 @@ License:
 
 import unittest
 
-from src.models import interfaces as models
+from src.schemas.interfaces import (
+    TableLabelsV3,
+)
 # noinspection PyProtectedMember
 from src.review import _row as review  # Direct internal import — acceptable in tests
 from tests.fixtures import v3_value as vfx
@@ -61,7 +63,7 @@ class TestItem(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.ITEM_BAD)
-        expected = models.RowFields.ITEM
+        expected = TableLabelsV3.ITEM
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -103,7 +105,7 @@ class TestComponentType(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.COMP_TYPE_BAD)
-        expected = models.RowFields.COMPONENT
+        expected = TableLabelsV3.COMPONENT_TYPE
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -145,7 +147,7 @@ class TestDevicePackage(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.DEVICE_PACKAGE_BAD)
-        expected = models.RowFields.PACKAGE
+        expected = TableLabelsV3.DEVICE_PACKAGE
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -187,7 +189,7 @@ class TestDescription(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.DESCRIPTION_BAD)
-        expected = models.RowFields.DESCRIPTION
+        expected = TableLabelsV3.DESCRIPTION
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -229,7 +231,7 @@ class TestUnits(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.UNITS_BAD)
-        expected = models.RowFields.UNITS
+        expected = TableLabelsV3.UNITS
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -271,7 +273,7 @@ class TestClassification(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.CLASSIFICATION_BAD)
-        expected = models.RowFields.CLASSIFICATION
+        expected = TableLabelsV3.CLASSIFICATION
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -313,7 +315,7 @@ class TestManufacturerName(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.MFG_NAME_BAD)
-        expected = models.RowFields.MANUFACTURER
+        expected = TableLabelsV3.MFG_NAME
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -355,7 +357,7 @@ class TestMfgPartNumber(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.MFG_PART_NO_BAD)
-        expected = models.RowFields.MFG_PART_NO
+        expected = TableLabelsV3.MFG_PART_NO
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -397,7 +399,7 @@ class TestUlVdeNumber(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.UL_VDE_NO_BAD)
-        expected = models.RowFields.UL_VDE_NUMBER
+        expected = TableLabelsV3.UL_VDE_NO
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -439,7 +441,7 @@ class TestValidatedAt(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.VALIDATED_AT_BAD)
-        expected = models.RowFields.VALIDATED_AT
+        expected = TableLabelsV3.VALIDATED_AT
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -481,7 +483,7 @@ class TestQuantity(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.QUANTITY_BAD)
-        expected = models.RowFields.QTY
+        expected = TableLabelsV3.QUANTITY
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -521,7 +523,7 @@ class TestDesignator(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.DESIGNATOR_BAD)
-        expected = models.RowFields.DESIGNATOR
+        expected = TableLabelsV3.DESIGNATORS
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -563,7 +565,7 @@ class TestUnitPrice(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.PRICE_BAD)
-        expected = models.RowFields.UNIT_PRICE
+        expected = TableLabelsV3.UNIT_PRICE
         expected_size = len(expected)
 
         for value in invalid_values:
@@ -605,7 +607,7 @@ class TestSubTotal(unittest.TestCase):
         """
         # ARRANGE
         invalid_values = list(vfx.PRICE_BAD)
-        expected = models.RowFields.SUB_TOTAL
+        expected = TableLabelsV3.SUB_TOTAL
         expected_size = len(expected)
 
         for value in invalid_values:

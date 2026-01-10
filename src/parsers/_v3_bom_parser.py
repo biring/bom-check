@@ -22,7 +22,7 @@ Example Usage:
 Dependencies:
  - Python >= 3.10
  - pandas
- - src.models.interfaces: Bom, Board, Header, Row
+ - src.models.interfaces: BomV3, BoardV3, HeaderV3, RowV3
  - src.parsers._common: utility functions for flattening, extraction, and normalization
 
 Notes:
@@ -38,10 +38,28 @@ License:
 import pandas as pd
 
 import src.parsers._common as common
-from src.models.interfaces import *
+
+from src.adapters.interfaces import (
+    map_template_v3_header_to_bom_v3_header,
+    map_template_v3_table_to_bom_v3_row,
+)
+
+from src.models.interfaces import (
+    BomV3,
+    BoardV3,
+    HeaderV3,
+    RowV3,
+)
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+    TEMPLATE_IDENTIFIERS_V3,
+    TABLE_TITLE_ROW_IDENTIFIERS_V3,
+)
 
 
-def _is_cost_bom(boards: list[Board]) -> bool:
+def _is_cost_bom(boards: list[BoardV3]) -> bool:
     """
     Determine whether the parsed BOM represents a costed BOM.
 
@@ -50,7 +68,7 @@ def _is_cost_bom(boards: list[Board]) -> bool:
     - Otherwise, the BOM is classified as costed BOM (fail-safe default).
 
     Args:
-        boards (list[Board]): Parsed board BOMs.
+        boards (list[BoardV3]): Parsed board BOMs.
 
     Returns:
         bool: True if the BOM is classified as a costed BOM, otherwise False.
@@ -92,7 +110,7 @@ def _is_v3_board_sheet(sheet_name: str, sheet_data: pd.DataFrame) -> bool:
         bool: True if all required identifiers are found, False otherwise.
     """
     # Check for all required identifiers in a single row to qualify as a Version 3 board BOM
-    if common.has_all_identifiers_in_single_row(sheet_name, sheet_data, Row.get_v3_template_labels()):
+    if common.has_all_identifiers_in_single_row(sheet_name, sheet_data, tuple(TABLE_TITLE_ROW_IDENTIFIERS_V3)):
         # TODO: logger.info(f"✅ Sheet '{name}' is version 3 board BOM.")
         # when match found, exit
         return True
@@ -104,7 +122,7 @@ def _is_v3_board_sheet(sheet_name: str, sheet_data: pd.DataFrame) -> bool:
     return False
 
 
-def _parse_board_sheet(sheet_name: str, sheet_data: pd.DataFrame) -> Board:
+def _parse_board_sheet(sheet_name: str, sheet_data: pd.DataFrame) -> BoardV3:
     """
     Parses a board BOM sheet into a structured Board object.
 
@@ -116,25 +134,25 @@ def _parse_board_sheet(sheet_name: str, sheet_data: pd.DataFrame) -> Board:
         sheet_data (pd.DataFrame): The board BOM sheet to be parsed.
 
     Returns:
-        Board: A structured Board object containing parsed header and component rows.
+        BoardV3: A structured Board object containing parsed header and component rows.
     """
     # Extract board-level metadata block from the top of the sheet
-    header_block = common.extract_header_block(sheet_data, Row.get_v3_template_labels())
+    header_block = common.extract_header_block(sheet_data, tuple(TEMPLATE_IDENTIFIERS_V3))
     # Parse and assign header metadata
     header = _parse_board_header(header_block)
 
     # Extract the BOM component table from the lower part of the sheet
-    table_block = common.extract_table_block(sheet_data, Row.get_v3_template_labels())
+    table_block = common.extract_table_block(sheet_data, tuple(TABLE_TITLE_ROW_IDENTIFIERS_V3))
     # Parse and assign the BOM rows
     rows = _parse_board_table(table_block)
 
     # Create Board object
-    board: Board = Board(header=header, rows=rows, sheet_name=sheet_name)
+    board: BoardV3 = BoardV3(header=header, rows=rows, sheet_name=sheet_name)
 
     return board
 
 
-def _parse_board_header(sheet_header: pd.DataFrame) -> Header:
+def _parse_board_header(sheet_header: pd.DataFrame) -> HeaderV3:
     """
     Parses the board-level metadata block into a Header object.
 
@@ -144,27 +162,26 @@ def _parse_board_header(sheet_header: pd.DataFrame) -> Header:
         sheet_header (pd.DataFrame): Metadata section of the sheet.
 
     Returns:
-        Header: A populated Header object with string values.
+        HeaderV3: A populated Header object with string values.
     """
     field_map = {}
 
     # Flatten the metadata block into a list of strings
     header_as_list = common.flatten_dataframe(sheet_header)
 
-    for excel_label in Header.get_labels():
-        attr_name = Header.get_attr_name_by_label(excel_label)
-        attr_value = common.extract_value_after_identifier(header_as_list, excel_label)
-        field_map[attr_name] = attr_value
+    for label in HeaderLabelsV3.values():
+        value = common.extract_value_after_identifier(header_as_list, label)
+        field_map[label] = value
 
     try:
-        return Header(**field_map)
+        return map_template_v3_header_to_bom_v3_header(field_map)
     except Exception as e:
         raise ValueError(
             f"Header mapping issue during header parsing. Provided keys: {field_map.keys()}"
         ) from e
 
 
-def _parse_board_table(sheet_table: pd.DataFrame) -> tuple[Row, ...]:
+def _parse_board_table(sheet_table: pd.DataFrame) -> tuple[RowV3, ...]:
     """
     Parses the component table into a tuple of Row instances.
 
@@ -174,9 +191,9 @@ def _parse_board_table(sheet_table: pd.DataFrame) -> tuple[Row, ...]:
         sheet_table (pd.DataFrame): The component table section of the BOM.
 
     Returns:
-        tuple[Row, ...]: Parsed BOM component rows.
+        tuple[RowV3, ...]: Parsed BOM component rows.
     """
-    rows: list[Row] = []
+    rows: list[RowV3] = []
 
     for _, row in sheet_table.iterrows():
         # Convert each row of the table into an Row object
@@ -187,7 +204,7 @@ def _parse_board_table(sheet_table: pd.DataFrame) -> tuple[Row, ...]:
     return tuple(rows)
 
 
-def _parse_board_table_row(row: pd.Series) -> Row:
+def _parse_board_table_row(row: pd.Series) -> RowV3:
     """
     Parses a single component row into a Row instance.
 
@@ -197,17 +214,16 @@ def _parse_board_table_row(row: pd.Series) -> Row:
         row (pd.Series): One row of the BOM table.
 
     Returns:
-        Row: The parsed BOM component with mapped field values.
+        RowV3: The parsed BOM component with mapped field values.
     """
     field_map = {}
 
-    for excel_label in Row.get_labels():
-        attr_name = Row.get_attr_name_by_label(excel_label)
-        attr_value = common.extract_cell_value_by_fuzzy_header(row, excel_label)
-        field_map[attr_name] = attr_value
+    for label in TableLabelsV3.values():
+        value = common.extract_cell_value_by_fuzzy_header(row, label)
+        field_map[label] = value
 
     try:
-        return Row(**field_map)
+        return map_template_v3_table_to_bom_v3_row(field_map)
     except Exception as e:
         raise ValueError(
             f"Row mapping issue during row parsing. Provided keys: {field_map.keys()}"
@@ -230,7 +246,7 @@ def is_v3_bom(sheets: dict[str, pd.DataFrame]) -> bool:
     # Iterate through all sheets and check for required identifiers
     for sheet_name, sheet_data in sheets.items():
         # If it contains the labels that identify it as version 3 template
-        if common.has_all_identifiers_in_single_row(sheet_name, sheet_data, Row.get_v3_template_labels()):
+        if common.has_all_identifiers_in_single_row(sheet_name, sheet_data, tuple(TABLE_TITLE_ROW_IDENTIFIERS_V3)):
             # TODO: logger.info(f"✅ Sheet '{name}' is using version 3 BOM template.")
             # TODO: logger.info(f"✅ BOM is using version 3 template.")
             # Return True on first match
@@ -244,7 +260,7 @@ def is_v3_bom(sheets: dict[str, pd.DataFrame]) -> bool:
     return False
 
 
-def parse_v3_bom(file_name: str, sheets: dict[str, pd.DataFrame]) -> Bom:
+def parse_v3_bom(file_name: str, sheets: dict[str, pd.DataFrame]) -> BomV3:
     """
     Parses Version 3 BOM sheets into a structured Bom object.
 
@@ -256,13 +272,13 @@ def parse_v3_bom(file_name: str, sheets: dict[str, pd.DataFrame]) -> Bom:
         sheets (dict[str, pd.DataFrame]): Workbook sheets keyed by sheet name.
 
     Returns:
-        Bom: Parsed BOM with one or more structured boards.
+        BomV3: Parsed BOM with one or more structured boards.
 
     Raises:
         ValueError: If no valid board sheets are found.
     """
 
-    boards: list[Board] = []
+    boards: list[BoardV3] = []
 
     # Loop through each sheet
     for sheet_name, sheet_data in sheets.items():
@@ -276,7 +292,7 @@ def parse_v3_bom(file_name: str, sheets: dict[str, pd.DataFrame]) -> Bom:
             # If not ignore the sheet
             pass
 
-    bom = Bom(
+    bom = BomV3(
         file_name=file_name,
         is_cost_bom=_is_cost_bom(boards),
         boards=tuple(boards)

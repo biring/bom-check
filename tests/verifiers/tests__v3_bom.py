@@ -68,9 +68,9 @@ class TestVerifyHeaderValue(unittest.TestCase):
         headers = (
             replace(bfx.HEADER_A, model_no=vfx.MODEL_NO_BAD[0]),
             replace(bfx.HEADER_A, board_name=vfx.BOARD_NAME_BAD[0]),
-            replace(bfx.HEADER_A, manufacturer=vfx.BOARD_SUPPLIER_BAD[0]),
+            replace(bfx.HEADER_A, board_supplier=vfx.BOARD_SUPPLIER_BAD[0]),
             replace(bfx.HEADER_A, build_stage=vfx.BUILD_STAGE_BAD[0]),
-            replace(bfx.HEADER_A, date=vfx.BOM_DATE_BAD[0]),
+            replace(bfx.HEADER_A, bom_date=vfx.BOM_DATE_BAD[0]),
             replace(bfx.HEADER_A, material_cost=vfx.COST_BAD[0]),
             replace(bfx.HEADER_A, overhead_cost=vfx.COST_BAD[1]),
             replace(bfx.HEADER_A, total_cost=vfx.COST_BAD[2]),
@@ -233,14 +233,14 @@ class TestVerifyRowValue(unittest.TestCase):
             replace(bfx.ROW_A_1, component_type=vfx.COMP_TYPE_BAD[0]),
             replace(bfx.ROW_A_1, device_package=vfx.DEVICE_PACKAGE_BAD[0]),
             replace(bfx.ROW_A_1, description=vfx.DESCRIPTION_BAD[0]),
-            replace(bfx.ROW_A_1, unit=vfx.UNITS_BAD[0]),
+            replace(bfx.ROW_A_1, units=vfx.UNITS_BAD[0]),
             replace(bfx.ROW_A_1, classification=vfx.CLASSIFICATION_BAD[0]),
-            replace(bfx.ROW_A_1, manufacturer=vfx.MFG_NAME_BAD[0]),
+            replace(bfx.ROW_A_1, mfg_name=vfx.MFG_NAME_BAD[0]),
             replace(bfx.ROW_A_1, mfg_part_number=vfx.MFG_PART_NO_BAD[0]),
             replace(bfx.ROW_A_1, ul_vde_number=vfx.UL_VDE_NO_BAD[0]),
             replace(bfx.ROW_A_1, validated_at=vfx.VALIDATED_AT_BAD[0]),
             replace(bfx.ROW_A_1, qty=vfx.QUANTITY_BAD[0]),
-            replace(bfx.ROW_A_1, designator=vfx.DESIGNATOR_BAD[0]),
+            replace(bfx.ROW_A_1, designators=vfx.DESIGNATOR_BAD[0]),
             replace(bfx.ROW_A_1, unit_price=vfx.PRICE_BAD[0]),
             replace(bfx.ROW_A_1, sub_total=vfx.PRICE_BAD[0]),
         )
@@ -312,9 +312,9 @@ class TestVerifyRowLogic(unittest.TestCase):
             # quantity is zero when item is blank.
             replace(bfx.ROW_A_1, item="", qty="2"),
             # designator is specified when quantity is an integer more than zero.
-            replace(bfx.ROW_A_1, qty="2", designator=""),
+            replace(bfx.ROW_A_1, qty="2", designators=""),
             # designator count equals quantity when quantity is a greater than zero integer
-            replace(bfx.ROW_A_1, qty="2", designator="R1"),
+            replace(bfx.ROW_A_1, qty="2", designators="R1"),
             # unit price is greater than zero when quantity is greater than zero.
             replace(bfx.ROW_A_1, qty="2", unit_price="0"),
             # sub-total is zero when quantity is zero.

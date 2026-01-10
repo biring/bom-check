@@ -32,17 +32,22 @@ __all__ = []  # Internal-only; not part of public API. Star import from this mod
 
 from src.common import ChangeLog as IssueLog
 from src.review import interfaces as review
-from src.models import interfaces as model
+
+from src.models.interfaces import (
+    BomV3,
+    HeaderV3,
+    RowV3,
+)
 
 
-def check_v3_bom(bom: model.Bom) -> tuple[str, ...]:
+def check_v3_bom(bom: BomV3) -> tuple[str, ...]:
     """
     Run all checks on a Version 3 BOM and return rendered diagnostic messages.
 
     Traverses all boards, headers, and rows in the BOM, applies field-level and logic-level check functions, and accumulates issues as printable diagnostic strings in the format "module, file, sheet, section, message".
 
     Args:
-        bom (model.Bom): Structured BOM instance containing boards, headers, and rows to check.
+        bom (BomV3): Structured BOM instance containing boards, headers, and rows to check.
 
     Returns:
         tuple[str, ...]: Tuple of rendered diagnostic messages; empty if no issues are found.
@@ -60,12 +65,12 @@ def check_v3_bom(bom: model.Bom) -> tuple[str, ...]:
 
         # Row-level field and logic checks
         for row_index, row in enumerate(bom_board.rows, start=1):
-            issue_log.set_section_name(f"{model.Row.__name__}: {row_index}")
+            issue_log.set_section_name(f"{RowV3.__name__}: {row_index}")
             _check_row_value(issue_log, row)
             _check_row_logic(issue_log, row)
 
         # Header-level checks
-        issue_log.set_section_name(model.Header.__name__)
+        issue_log.set_section_name(HeaderV3.__name__)
         _check_header_logic(issue_log, bom_board.header, bom_board.rows)
         _check_header_value(issue_log, bom_board.header)
 
@@ -73,7 +78,7 @@ def check_v3_bom(bom: model.Bom) -> tuple[str, ...]:
     return issue_log.render()
 
 
-def _check_header_value(issue_log: IssueLog, header: model.Header) -> None:
+def _check_header_value(issue_log: IssueLog, header: HeaderV3) -> None:
     """
     Run field-level checks on header values.
 
@@ -81,7 +86,7 @@ def _check_header_value(issue_log: IssueLog, header: model.Header) -> None:
 
     Args:
         issue_log (IssueLog): Log used to record header check results.
-        header (model.Header): Header instance whose field values are checked.
+        header (HeaderV3): Header instance whose field values are checked.
 
     Returns:
         None: Issues are recorded in the IssueLog.
@@ -93,9 +98,9 @@ def _check_header_value(issue_log: IssueLog, header: model.Header) -> None:
     field_checks = [
         (review.model_number, header.model_no),
         (review.board_name, header.board_name),
-        (review.board_supplier, header.manufacturer),
+        (review.board_supplier, header.board_supplier),
         (review.build_stage, header.build_stage),
-        (review.bom_date, header.date),
+        (review.bom_date, header.bom_date),
         (review.material_cost, header.material_cost),
         (review.overhead_cost, header.overhead_cost),
         (review.total_cost, header.total_cost),
@@ -106,7 +111,7 @@ def _check_header_value(issue_log: IssueLog, header: model.Header) -> None:
         issue_log.add_entry(check(field_value))
 
 
-def _check_header_logic(issue_log: IssueLog, header: model.Header, rows: tuple[model.Row, ...]) -> None:
+def _check_header_logic(issue_log: IssueLog, header: HeaderV3, rows: tuple[RowV3, ...]) -> None:
     """
     Run logic-level checks between header values and row data.
 
@@ -115,8 +120,8 @@ def _check_header_logic(issue_log: IssueLog, header: model.Header, rows: tuple[m
 
     Args:
         issue_log (IssueLog): Log used to record header logic issues.
-        header (model.Header): Header containing the summary values being checked.
-        rows (tuple[model.Row, ...]): Rows used to compute derived totals.
+        header (HeaderV3): Header containing the summary values being checked.
+        rows (tuple[RowV3, ...]): Rows used to compute derived totals.
 
     Returns:
         None: All issues are captured in the IssueLog.
@@ -131,7 +136,7 @@ def _check_header_logic(issue_log: IssueLog, header: model.Header, rows: tuple[m
     issue_log.add_entry(review.total_cost_calculation(header))
 
 
-def _check_row_value(issue_log: IssueLog, row: model.Row) -> None:
+def _check_row_value(issue_log: IssueLog, row: RowV3) -> None:
     """
     Run field-level checks on a single BOM row.
 
@@ -139,7 +144,7 @@ def _check_row_value(issue_log: IssueLog, row: model.Row) -> None:
 
     Args:
         issue_log (IssueLog): Log used to record field-level row issues.
-        row (model.Row): Row instance whose individual fields are checked.
+        row (RowV3): Row instance whose individual fields are checked.
 
     Returns:
         None: Issues are recorded in the IssueLog.
@@ -153,14 +158,14 @@ def _check_row_value(issue_log: IssueLog, row: model.Row) -> None:
         (review.component_type, row.component_type),
         (review.device_package, row.device_package),
         (review.description, row.description),
-        (review.units, row.unit),
+        (review.units, row.units),
         (review.classification, row.classification),
-        (review.mfg_name, row.manufacturer),
+        (review.mfg_name, row.mfg_name),
         (review.mfg_part_no, row.mfg_part_number),
         (review.ul_vde_number, row.ul_vde_number),
         (review.validated_at, row.validated_at),
         (review.quantity, row.qty),
-        (review.designator, row.designator),
+        (review.designator, row.designators),
         (review.unit_price, row.unit_price),
         (review.sub_total, row.sub_total),
     ]
@@ -170,7 +175,7 @@ def _check_row_value(issue_log: IssueLog, row: model.Row) -> None:
         issue_log.add_entry(check(field_value))
 
 
-def _check_row_logic(issue_log: IssueLog, row: model.Row) -> None:
+def _check_row_logic(issue_log: IssueLog, row: RowV3) -> None:
     """
     Run logic-level checks on a single BOM row.
 
@@ -179,7 +184,7 @@ def _check_row_logic(issue_log: IssueLog, row: model.Row) -> None:
 
     Args:
         issue_log (IssueLog): Log used to record logic-level row issues.
-        row (model.Row): Row instance to check for logic consistency.
+        row (RowV3): Row instance to check for logic consistency.
 
     Returns:
         None: Issues are recorded in the IssueLog.

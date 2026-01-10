@@ -29,10 +29,14 @@ License:
 __all__ = []  # Internal-only; not part of public API. Star import from this module gets nothing
 
 from src.approve import interfaces as approve
-from src.models import interfaces as model
+from src.models.interfaces import (
+    BomV3,
+    HeaderV3,
+    RowV3,
+)
 
 
-def verify_v3_bom(bom: model.Bom) -> None:
+def verify_v3_bom(bom: BomV3) -> None:
     """
     Run all Version 3 BOM verification on the given BOM instance.
 
@@ -41,7 +45,7 @@ def verify_v3_bom(bom: model.Bom) -> None:
     rule violation and wraps the error with BOM filename context.
 
     Args:
-        bom (model.Bom): Parsed BOM object containing boards, headers, and rows
+        bom (BomV3): Parsed BOM object containing boards, headers, and rows
             to be verified.
 
     Returns:
@@ -75,7 +79,7 @@ def verify_v3_bom(bom: model.Bom) -> None:
     return
 
 
-def _verify_header_value(header: model.Header) -> None:
+def _verify_header_value(header: HeaderV3) -> None:
     """
     Run field-level verification on BOM header values.
 
@@ -83,7 +87,7 @@ def _verify_header_value(header: model.Header) -> None:
     function and re-raises failures with function-name context for easier debugging.
 
     Args:
-        header (model.Header): Header instance whose fields are being verified.
+        header (HeaderV3): Header instance whose fields are being verified.
 
     Returns:
         None: All header field verifications passed without raising an exception.
@@ -97,9 +101,9 @@ def _verify_header_value(header: model.Header) -> None:
     cases = [
         (approve.model_number, header.model_no),
         (approve.board_name, header.board_name),
-        (approve.board_supplier, header.manufacturer),
+        (approve.board_supplier, header.board_supplier),
         (approve.build_stage, header.build_stage),
-        (approve.bom_date, header.date),
+        (approve.bom_date, header.bom_date),
         (approve.material_cost, header.material_cost),
         (approve.overhead_cost, header.overhead_cost),
         (approve.total_cost, header.total_cost),
@@ -121,7 +125,7 @@ def _verify_header_value(header: model.Header) -> None:
     return
 
 
-def _verify_header_logic(header: model.Header, rows: tuple[model.Row, ...]) -> None:
+def _verify_header_logic(header: HeaderV3, rows: tuple[RowV3, ...]) -> None:
     """
     Run logic-level verification between header totals and row-level cost data.
 
@@ -129,8 +133,8 @@ def _verify_header_logic(header: model.Header, rows: tuple[model.Row, ...]) -> N
     in the header are consistent with the row data.
 
     Args:
-        header (model.Header): BOM header whose computed totals are being verified.
-        rows (tuple[model.Row, ...]): BOM rows used to derive material-cost
+        header (HeaderV3): BOM header whose computed totals are being verified.
+        rows (tuple[RowV3, ...]): BOM rows used to derive material-cost
             calculations.
 
     Returns:
@@ -162,7 +166,7 @@ def _verify_header_logic(header: model.Header, rows: tuple[model.Row, ...]) -> N
     return
 
 
-def _verify_row_value(row: model.Row) -> None:
+def _verify_row_value(row: RowV3) -> None:
     """
     Run field-level verification on a single BOM row.
 
@@ -170,7 +174,7 @@ def _verify_row_value(row: model.Row) -> None:
     function and re-raises failures with function-name context for easier debugging.
 
     Args:
-        row (model.Row): Row instance whose fields are being verified.
+        row (RowV3): Row instance whose fields are being verified.
 
     Returns:
         None: All row field verifications passed without raising an exception.
@@ -185,14 +189,14 @@ def _verify_row_value(row: model.Row) -> None:
         (approve.component_type, row.component_type),
         (approve.device_package, row.device_package),
         (approve.description, row.description),
-        (approve.units, row.unit),
+        (approve.units, row.units),
         (approve.classification, row.classification),
-        (approve.mfg_name, row.manufacturer),
+        (approve.mfg_name, row.mfg_name),
         (approve.mfg_part_no, row.mfg_part_number),
         (approve.ul_vde_number, row.ul_vde_number),
         (approve.validated_at, row.validated_at),
         (approve.quantity, row.qty),
-        (approve.designator, row.designator),
+        (approve.designator, row.designators),
         (approve.unit_price, row.unit_price),
         (approve.sub_total, row.sub_total),
     ]
@@ -215,7 +219,7 @@ def _verify_row_value(row: model.Row) -> None:
     return
 
 
-def _verify_row_logic(row: model.Row) -> None:
+def _verify_row_logic(row: RowV3) -> None:
     """
     Run logic-level verification on a single BOM row.
 
@@ -223,7 +227,7 @@ def _verify_row_logic(row: model.Row) -> None:
     price consistency) through the `approve` interfaces.
 
     Args:
-        row (model.Row): Row instance whose aggregate logic and relationships
+        row (RowV3): Row instance whose aggregate logic and relationships
             are being verified.
 
     Returns:

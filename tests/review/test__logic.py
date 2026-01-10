@@ -28,7 +28,16 @@ License:
 """
 
 import unittest
-from src.models import interfaces as model
+
+from src.models.interfaces import (
+    HeaderV3,
+    RowV3,
+)
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
 
 # noinspection PyProtectedMember
 from src.review import _logic as logic  # Integration import of the internal module
@@ -44,7 +53,7 @@ class TestQuantityZero(unittest.TestCase):
         Should return empty message when item is blank and qty is zero.
         """
         # ARRANGE
-        row = model.Row(item="", qty="0", designator="", unit_price="0.00", sub_total="0.00")
+        row = RowV3(item="", qty="0", designators="", unit_price="0.00", sub_total="0.00")
         expected = ""
 
         # ACT
@@ -59,8 +68,8 @@ class TestQuantityZero(unittest.TestCase):
         Should return a non-empty message mentioning 'quantity' when item is blank and quantity == 0.
         """
         # ARRANGE
-        row = model.Row(item="", qty="2", designator="", unit_price="0.25", sub_total="0.50")
-        expected_contains = model.RowFields.QTY
+        row = RowV3(item="", qty="2", designators="", unit_price="0.25", sub_total="0.50")
+        expected_contains = TableLabelsV3.QUANTITY
         expected_min_len = len(expected_contains)
 
         # ACT
@@ -83,7 +92,7 @@ class TestDesignatorRequired(unittest.TestCase):
         Should return empty message when qty > 0 and designator(s) are present.
         """
         # ARRANGE
-        row = model.Row(item="R", qty="3", designator="R1, R2, R3", unit_price="0.10", sub_total="0.30")
+        row = RowV3(item="R", qty="3", designators="R1, R2, R3", unit_price="0.10", sub_total="0.30")
         expected = ""
 
         # ACT
@@ -98,8 +107,8 @@ class TestDesignatorRequired(unittest.TestCase):
         Should return a non-empty message mentioning 'designator' when qty >= 1 (integer) and designator is blank.
         """
         # ARRANGE
-        row = model.Row(item="R", qty="1", designator="", unit_price="0.10", sub_total="0.10")
-        expected_contains = model.RowFields.DESIGNATOR
+        row = RowV3(item="R", qty="1", designators="", unit_price="0.10", sub_total="0.10")
+        expected_contains = TableLabelsV3.DESIGNATORS
         expected_min_len = len(expected_contains)
 
         # ACT
@@ -122,7 +131,7 @@ class TestDesignatorCount(unittest.TestCase):
         Should return empty message when designator count equals integer qty.
         """
         # ARRANGE
-        row = model.Row(qty="3", designator="R1, R2, R3")
+        row = RowV3(qty="3", designators="R1, R2, R3")
         expected = ""
 
         # ACT
@@ -137,8 +146,8 @@ class TestDesignatorCount(unittest.TestCase):
         Should return a non-empty message mentioning 'designator' when the number of comma-separated designators != integer qty.
         """
         # ARRANGE
-        row = model.Row(qty="3", designator="R1, R2")  # only 2 designators, qty=3
-        expected_contains = model.RowFields.DESIGNATOR
+        row = RowV3(qty="3", designators="R1, R2")  # only 2 designators, qty=3
+        expected_contains = TableLabelsV3.DESIGNATORS
         expected_min_len = len(expected_contains)
 
         # ACT
@@ -161,7 +170,7 @@ class TestUnitPriceSpecified(unittest.TestCase):
         Should return empty message when qty > 0 and unit price > 0.
         """
         # ARRANGE
-        row = model.Row(qty="2", unit_price="0.25")
+        row = RowV3(qty="2", unit_price="0.25")
         expected = ""
 
         # ACT
@@ -176,8 +185,8 @@ class TestUnitPriceSpecified(unittest.TestCase):
         Should return a non-empty message mentioning 'unit price' when qty > 0 but unit price is zero/blank.
         """
         # ARRANGE
-        row = model.Row(qty="2", unit_price="0.00")
-        expected_contains = model.RowFields.UNIT_PRICE
+        row = RowV3(qty="2", unit_price="0.00")
+        expected_contains = TableLabelsV3.UNIT_PRICE
         expected_min_len = len(expected_contains)
 
         # ACT
@@ -200,7 +209,7 @@ class TestSubtotalZero(unittest.TestCase):
         Should return empty message when qty == 0 and sub_total == 0.
         """
         # ARRANGE
-        row = model.Row(qty="0", sub_total="0.00")
+        row = RowV3(qty="0", sub_total="0.00")
         expected = ""
 
         # ACT
@@ -215,8 +224,8 @@ class TestSubtotalZero(unittest.TestCase):
         Should return a non-empty message mentioning 'sub-total' when qty == 0 but sub_total > 0.
         """
         # ARRANGE
-        row = model.Row(qty="0", sub_total="1.00")
-        expected_contains = model.RowFields.SUB_TOTAL
+        row = RowV3(qty="0", sub_total="1.00")
+        expected_contains = TableLabelsV3.SUB_TOTAL
         expected_min_len = len(expected_contains)
 
         # ACT
@@ -239,7 +248,7 @@ class TestSubTotalCalculation(unittest.TestCase):
         Should return empty message when sub_total == qty * unit_price.
         """
         # ARRANGE
-        row = model.Row(qty="2", unit_price="0.25", sub_total="0.50")
+        row = RowV3(qty="2", unit_price="0.25", sub_total="0.50")
         expected = ""
 
         # ACT
@@ -254,8 +263,8 @@ class TestSubTotalCalculation(unittest.TestCase):
         Should return a non-empty message mentioning 'sub-total' when calculation does not match.
         """
         # ARRANGE
-        row = model.Row(qty="2", unit_price="0.25", sub_total="0.60")
-        expected_contains = model.RowFields.SUB_TOTAL
+        row = RowV3(qty="2", unit_price="0.25", sub_total="0.60")
+        expected_contains = TableLabelsV3.SUB_TOTAL
         expected_min_len = len(expected_contains)
 
         # ACT
@@ -279,10 +288,10 @@ class TestMaterialCostCalculation(unittest.TestCase):
         """
         # ARRANGE
         rows = (
-            model.Row(sub_total="0.60"),
-            model.Row(sub_total="0.40"),
+            RowV3(sub_total="0.60"),
+            RowV3(sub_total="0.40"),
         )
-        header = model.Header(material_cost="1.00", overhead_cost="0.50", total_cost="1.50")
+        header = HeaderV3(material_cost="1.00", overhead_cost="0.50", total_cost="1.50")
         expected = ""
 
         # ACT
@@ -298,11 +307,11 @@ class TestMaterialCostCalculation(unittest.TestCase):
         """
         # ARRANGE
         rows = (
-            model.Row(sub_total="0.60"),
-            model.Row(sub_total="0.40"),
+            RowV3(sub_total="0.60"),
+            RowV3(sub_total="0.40"),
         )
-        header = model.Header(material_cost="1.10", overhead_cost="0.50", total_cost="1.60")
-        expected_contains = model.HeaderFields.MATERIAL_COST
+        header = HeaderV3(material_cost="1.10", overhead_cost="0.50", total_cost="1.60")
+        expected_contains = HeaderLabelsV3.MATERIAL_COST
         expected_min_len = len(expected_contains)
 
         # ACT
@@ -325,7 +334,7 @@ class TestTotalCostCalculation(unittest.TestCase):
         Should return empty message when total_cost == material_cost + overhead_cost.
         """
         # ARRANGE
-        header = model.Header(material_cost="1.00", overhead_cost="0.50", total_cost="1.50")
+        header = HeaderV3(material_cost="1.00", overhead_cost="0.50", total_cost="1.50")
         expected = ""
 
         # ACT
@@ -340,8 +349,8 @@ class TestTotalCostCalculation(unittest.TestCase):
         Should return a non-empty message mentioning 'total cost' when header.total_cost is incorrect.
         """
         # ARRANGE
-        header = model.Header(material_cost="1.00", overhead_cost="0.50", total_cost="1.60")
-        expected_contains = model.HeaderFields.TOTAL_COST
+        header = HeaderV3(material_cost="1.00", overhead_cost="0.50", total_cost="1.60")
+        expected_contains = HeaderLabelsV3.TOTAL_COST
         expected_min_len = len(expected_contains)
 
         # ACT

@@ -29,7 +29,11 @@ License:
 
 import unittest
 from dataclasses import dataclass
-from src.models import interfaces as mdl
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+)
+
 from tests.fixtures import v3_value as vfx
 # noinspection PyProtectedMember
 from src.coerce import _header as header  # Direct internal import — acceptable in tests
@@ -106,7 +110,7 @@ class TestModelNumber(Assert):
     """
     Unit tests for `model_number` function.
     """
-    attr = mdl.HeaderFields.MODEL_NUMBER
+    attr = HeaderLabelsV3.MODEL_NO
 
     def test_change(self):
         """
@@ -144,7 +148,7 @@ class TestBoardName(Assert):
     """
     Unit tests for `board_name` function.
     """
-    attr = mdl.HeaderFields.BOARD_NAME
+    attr = HeaderLabelsV3.BOARD_NAME
 
     def test_change(self):
         """
@@ -183,7 +187,7 @@ class TestBoardSupplier(Assert):
     """
     Unit tests for `board_supplier` function.
     """
-    attr = mdl.HeaderFields.BOARD_SUPPLIER
+    attr = HeaderLabelsV3.BOARD_SUPPLIER
 
     def test_change(self):
         """
@@ -222,7 +226,7 @@ class TestBuildStage(Assert):
     """
     Unit tests for `build_stage` function.
     """
-    attr = mdl.HeaderFields.BUILD_STAGE
+    attr = HeaderLabelsV3.BUILD_STAGE
 
     def test_change(self):
         """
@@ -259,7 +263,7 @@ class TestBomDate(Assert):
     """
     Unit tests for `bom_date` function.
     """
-    attr = mdl.HeaderFields.BOM_DATE
+    attr = HeaderLabelsV3.BOM_DATE
 
     def test_change(self):
         """
@@ -296,7 +300,7 @@ class TestMaterialCost(Assert):
     """
     Unit tests for `material_cost` function.
     """
-    attr = mdl.HeaderFields.MATERIAL_COST
+    attr = HeaderLabelsV3.MATERIAL_COST
 
     def test_change(self):
         """
@@ -332,7 +336,7 @@ class TestOverheadCost(Assert):
     """
     Unit tests for `overhead_cost` function.
     """
-    attr = mdl.HeaderFields.OVERHEAD_COST
+    attr = HeaderLabelsV3.OVERHEAD_COST
 
     def test_change(self):
         """
@@ -368,7 +372,7 @@ class TestTotalCost(Assert):
     """
     Unit tests for `overhead_cost` function.
     """
-    attr = mdl.HeaderFields.TOTAL_COST
+    attr = HeaderLabelsV3.TOTAL_COST
 
     def test_change(self):
         """

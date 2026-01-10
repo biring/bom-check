@@ -32,8 +32,17 @@ import os
 import unittest
 import pandas as pd
 
-from src.models.interfaces import *
+from src.models.interfaces import (
+    BomV3,
+    BoardV3,
+    HeaderV3,
+    RowV3,
+)
 
+from src.schemas.interfaces import (
+    TEMPLATE_IDENTIFIERS_V3,
+    TABLE_TITLE_ROW_IDENTIFIERS_V3,
+)
 # noinspection PyProtectedMember
 import src.parsers._v3_bom_parser as v3_parser
 
@@ -44,18 +53,18 @@ class TestIsCostBom(unittest.TestCase):
     """
 
     @staticmethod
-    def _make_board(material_cost: str, total_cost: str) -> Board:
-        header = Header(
+    def _make_board(material_cost: str, total_cost: str) -> BoardV3:
+        header = HeaderV3(
             model_no="X",
             board_name="Y",
-            manufacturer="Z",
+            board_supplier="Z",
             build_stage="EB0",
-            date="2025-01-01 00:00:00",
+            bom_date="2025-01-01 00:00:00",
             material_cost=material_cost,
             overhead_cost="",
             total_cost=total_cost,
         )
-        return Board(header=header, rows=tuple(), sheet_name="S1")
+        return BoardV3(header=header, rows=tuple(), sheet_name="S1")
 
     def test_not_costed_bom_both_empty(self):
         """
@@ -161,8 +170,8 @@ class TestIsCostBom(unittest.TestCase):
         """
         # ARRANGE
         boards = [
-            self._make_board("12.34", "56.78"), # costed BOM
-            self._make_board("", ""), # NOT costed BOM
+            self._make_board("12.34", "56.78"),  # costed BOM
+            self._make_board("", ""),  # NOT costed BOM
         ]
         expected = False
 
@@ -205,7 +214,7 @@ class TestIsV3BoardSheet(unittest.TestCase):
         """
         # ARRANGE
         # Prepare a DataFrame with only some of the required identifiers (incomplete)
-        partial_identifiers = list(Row.get_v3_template_labels())[:-1] + ["Other"]
+        partial_identifiers = list(TEMPLATE_IDENTIFIERS_V3)[:-1] + ["Other"]
         sheet_data = [partial_identifiers] + [[None] * len(partial_identifiers)]
         test_df = pd.DataFrame(sheet_data)
         expected = False
@@ -225,7 +234,7 @@ class TestIsV3BoardSheet(unittest.TestCase):
         """
         # ARRANGE
         # Prepare a DataFrame that includes all required identifiers plus extras
-        all_identifiers = list(Row.get_v3_template_labels()) + ["Extra Column"]
+        all_identifiers = list(TEMPLATE_IDENTIFIERS_V3) + ["Extra Column"]
         sheet_data = [all_identifiers] + [[None] * len(all_identifiers)]
         test_df = pd.DataFrame(sheet_data)
         expected = True
@@ -350,12 +359,12 @@ class TestParseBoardHeader(unittest.TestCase):
         header_block_df = full_sheet_df.iloc[:10]
 
         # Expected Header instance from test data
-        expected = Header(
+        expected = HeaderV3(
             model_no="FD100US",
             board_name="POWER PCBA",
-            manufacturer="Kimball",
+            board_supplier="Kimball",
             build_stage="EB2",
-            date="2020-08-10 00:00:00",
+            bom_date="2020-08-10 00:00:00",
             material_cost="139.64",
             overhead_cost="2.34",
             total_cost="141.98"
@@ -395,80 +404,80 @@ class TestParseBoardSheet(unittest.TestCase):
             df = pd.read_excel(xls, dtype=str, header=None)
             sheet_name = xls.sheet_names[0]
 
-        expected = Board(
-            header=Header(
+        expected = BoardV3(
+            header=HeaderV3(
                 model_no="BM250",
                 board_name="POWER PCBA",
-                manufacturer="Kimball",
+                board_supplier="Kimball",
                 build_stage="PP1",
-                date="2025-08-10 00:00:00",
+                bom_date="2025-08-10 00:00:00",
                 material_cost="1.5",
                 overhead_cost="2.34",
                 total_cost="3.84"
             ),
             sheet_name="POWER PCBA",
             rows=(
-                Row(
+                RowV3(
                     item="1",
                     component_type="PCB",
                     device_package="",
                     description="FR-4, double layer, 1OZ, 1.6mm, 213mm*70mm",
-                    unit="PCS",
+                    units="PCS",
                     classification="A",
-                    manufacturer="Quick PCB",
+                    mfg_name="Quick PCB",
                     mfg_part_number="1670A_V1.1_A",
                     ul_vde_number="E351308",
                     validated_at="EB0",
                     qty="1",
-                    designator="PCB",
+                    designators="PCB",
                     unit_price="0.5",
                     sub_total="0.5"
                 ),
-                Row(
+                RowV3(
                     item="",
                     component_type="ALT1",
                     device_package="",
                     description="FR-4, double layer, 1OZ, 1.6mm, 213mm*70mm",
-                    unit="PCS",
+                    units="PCS",
                     classification="A",
-                    manufacturer="Fast Turn",
+                    mfg_name="Fast Turn",
                     mfg_part_number="3694AC",
                     ul_vde_number="E314919",
                     validated_at="EB1",
                     qty="0",
-                    designator="",
+                    designators="",
                     unit_price="0.7",
                     sub_total="0"
                 ),
-                Row(
+                RowV3(
                     item="2",
                     component_type="Relay",
                     device_package="DIP",
                     description="12VDC 17A/250VAC SPST -40~105℃ 21*16*21.8mm",
-                    unit="PCS",
+                    units="PCS",
                     classification="A",
-                    manufacturer="Sanyou",
+                    mfg_name="Sanyou",
                     mfg_part_number="SRG-S-112DM-F",
                     ul_vde_number="VDE 40037165",
                     validated_at="FOT/EB0",
                     qty="1",
-                    designator="RY1",
+                    designators="RY1",
                     unit_price="1",
                     sub_total="1"
                 ),
-                Row(
+                RowV3(
                     item="",
                     component_type="ALT1",
                     device_package="DIP",
                     description="12VDC 17A/250VAC SPST -40~105℃ 21*16*21.8mm",
-                    unit="PCS",
+                    units="PCS",
                     classification="A",
-                    manufacturer="Panasonic",
+                    mfg_name="Panasonic",
                     mfg_part_number="Y3U-SS-112LMF",
                     ul_vde_number="TUV R50446369",
                     validated_at="EB1/MP",
                     qty="0",
-                    designator="",
+                    designators="",
                     unit_price="1.2",
                     sub_total="0"
                 )
@@ -555,35 +564,35 @@ class TestParseBoardTable(unittest.TestCase):
         ])
 
         expected = [
-            Row(
+            RowV3(
                 item="1",
                 component_type="Relay",
                 device_package="DIP",
                 description="12VDC Relay",
-                unit="PCS",
+                units="PCS",
                 classification="A",
-                manufacturer="PANASONIC",
+                mfg_name="PANASONIC",
                 mfg_part_number="SRG-S-112DM-F",
                 ul_vde_number="VDE 40037165",
                 validated_at="EB0",
                 qty="1",
-                designator="RY1",
+                designators="RY1",
                 unit_price="1.000",
                 sub_total="1.000"
             ),
-            Row(
+            RowV3(
                 item="2",
                 component_type="Capacitor",
                 device_package="0805",
                 description="10uF 25V X7R",
-                unit="PCS",
+                units="PCS",
                 classification="B",
-                manufacturer="TDK",
+                mfg_name="TDK",
                 mfg_part_number="C2012X7R1E106K",
                 ul_vde_number="",
                 validated_at="EB0",
                 qty="2",
-                designator="C1,C2",
+                designators="C1,C2",
                 unit_price="0.100",
                 sub_total="0.200"
             )
@@ -635,19 +644,19 @@ class TestParseBoardTableRow(unittest.TestCase):
         })
 
         # Expected result from cleaned header and values
-        expected = Row(
+        expected = RowV3(
             item="1",
             component_type="Relay",
             device_package="DIP",
             description="12VDC Relay",
-            unit="PCS",
+            units="PCS",
             classification="A",
-            manufacturer="PANASONIC",
+            mfg_name="PANASONIC",
             mfg_part_number="SRG-S-112DM-F",
             ul_vde_number="VDE 40037165",
             validated_at="EB0",
             qty="1",
-            designator="RY1",
+            designators="RY1",
             unit_price="1.000",
             sub_total="1.000"
         )
@@ -689,86 +698,86 @@ class TestParseBom(unittest.TestCase):
                 # Parse the sheet into a DataFrame, forcing all cells to string, no header
                 df = xls.parse(name, dtype=str, header=None)
                 # Add the tuple (sheet_name, DataFrame) to our list
-                sheets[name] =df
+                sheets[name] = df
 
-        expected = Bom(
+        expected = BomV3(
             file_name=file_name,
             boards=(
-                Board(
-                    header=Header(
+                BoardV3(
+                    header=HeaderV3(
                         model_no="BM250",
                         board_name="Power PCBA",
-                        manufacturer="Kimball",
+                        board_supplier="Kimball",
                         build_stage="PP1",
-                        date="2025-08-10 00:00:00",
+                        bom_date="2025-08-10 00:00:00",
                         material_cost="0.9",
                         overhead_cost="1.25",
                         total_cost="2.15"
                     ),
                     sheet_name="Board1",
                     rows=(
-                        Row(
+                        RowV3(
                             item="1",
                             component_type="Substrate",
                             device_package="—",
                             description="Generic 2-layer, 1OZ, 1.6mm, 210mm × 70mm",
-                            unit="PCS",
+                            units="PCS",
                             classification="A",
-                            manufacturer="FabVendor A",
+                            mfg_name="FabVendor A",
                             mfg_part_number="SUB-01",
                             ul_vde_number="CERT-0001",
                             validated_at="PP1",
                             qty="1",
-                            designator="PCB1",
+                            designators="PCB1",
                             unit_price="0.8",
                             sub_total="0.8"
                         ),
-                        Row("", "ALT1", "—", "Generic 2-layer, 1OZ, 1.6mm, 210mm × 70mm", "PCS", "A",
+                        RowV3("", "ALT1", "—", "Generic 2-layer, 1OZ, 1.6mm, 210mm × 70mm", "PCS", "A",
                             "FabVendor B", "SUB-ALT1", "CERT-0002", "PP0", "0", "", "0.9", "0"),
-                        Row("2", "Switch", "DIP", "12VDC 15A SPST, 20×15×20mm, -40~105℃", "PCS", "A",
+                        RowV3("2", "Switch", "DIP", "12VDC 15A SPST, 20×15×20mm, -40~105℃", "PCS", "A",
                             "SwitchMfr A", "SW-01", "CERT-1001", "PP0/PP1", "1", "SW1", "0.1", "0.1"),
-                        Row("", "ALT1", "DIP", "12VDC 15A SPST, 20×15×20mm, -40~105℃", "PCS", "A",
+                        RowV3("", "ALT1", "DIP", "12VDC 15A SPST, 20×15×20mm, -40~105℃", "PCS", "A",
                             "SwitchMfr B", "SW-ALT1", "CERT-1002", "PP0", "0", "", "0.2", "0")
                     )
                 ),
-                Board(
-                    header=Header(
+                BoardV3(
+                    header=HeaderV3(
                         model_no="BM250",
                         board_name="MCU PCBA",
-                        manufacturer="Kimball",
+                        board_supplier="Kimball",
                         build_stage="PP1",
-                        date="2025-08-15 00:00:00",
+                        bom_date="2025-08-15 00:00:00",
                         material_cost="1.8",
                         overhead_cost="2.35",
                         total_cost="4.15"
                     ),
                     sheet_name="Board2",
                     rows=(
-                        Row(
+                        RowV3(
                             item="1",
                             component_type="Resistor",
                             device_package="603",
                             description="10kΩ ±1%, 1/10W, 0603",
-                            unit="PCS",
+                            units="PCS",
                             classification="A",
-                            manufacturer="ResiTech",
+                            mfg_name="ResiTech",
                             mfg_part_number="R-10K-0603",
                             ul_vde_number="UL123456",
                             validated_at="EV1",
                             qty="1",
-                            designator="R1",
+                            designators="R1",
                             unit_price="0.1",
                             sub_total="0.1"
                         ),
-                        Row("2", "Capacitor", "805", "1uF ±10%, 50V, X7R, 0805", "PCS", "A", "Captek", "C-1U-0805",
+                        RowV3("2", "Capacitor", "805", "1uF ±10%, 50V, X7R, 0805", "PCS", "A", "Captek", "C-1U-0805",
                             "UL654321", "EV2", "1", "C1", "0.2", "0.2"),
-                        Row("", "ALT1", "805", "1uF ±10%, 50V, X7R, 0805", "PCS", "A", "AltCap", "AC-1U-0805",
+                        RowV3("", "ALT1", "805", "1uF ±10%, 50V, X7R, 0805", "PCS", "A", "AltCap", "AC-1U-0805",
                             "UL654322", "EV3", "0", "", "0.22", "0"),
-                        Row("3", "Diode", "SOD-123", "1A, 100V, Fast Recovery, SOD-123", "PCS", "A", "Diotronics",
+                        RowV3("3", "Diode", "SOD-123", "1A, 100V, Fast Recovery, SOD-123", "PCS", "A", "Diotronics",
                             "D-1A-100V", "UL987654", "EV4", "1", "D1", "1.5", "1.5"),
-                        Row("", "ALT1", "SOD-123", "1A, 100V, Fast Recovery, SOD-123", "PCS", "A", "SemiComp",
+                        RowV3("", "ALT1", "SOD-123", "1A, 100V, Fast Recovery, SOD-123", "PCS", "A", "SemiComp",
                             "SC-D100", "UL987655", "EV5", "0", "", "1.45", "0"),
-                        Row("", "ALT2", "SOD-123", "1A, 100V, Fast Recovery, SOD-123", "PCS", "A", "FastFlow",
+                        RowV3("", "ALT2", "SOD-123", "1A, 100V, Fast Recovery, SOD-123", "PCS", "A", "FastFlow",
                             "FF-1A100V", "UL987656", "EV6", "0", "", "1.48", "0")
                     )
                 )

@@ -30,7 +30,9 @@ License:
 """
 __all__ = []  # Internal-only; not part of public API. Star import from this module gets nothing.
 
-from src.models import interfaces as mdl
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+)
 from . import _helper as helper
 from . import _rules as rule
 
@@ -49,7 +51,7 @@ def model_number(str_in: str) -> tuple[str, tuple[str, ...]]:
         None: This function delegates errors to the common engine; it does not raise on its own.
     """
     # Apply the rule set and collect changes
-    result = helper.apply_rule(str_in, rule.MODEL_NUMBER, mdl.HeaderFields.MODEL_NUMBER)
+    result = helper.apply_rule(str_in, rule.MODEL_NUMBER, HeaderLabelsV3.MODEL_NO)
 
     # Render the final normalized value and any rule-by-rule messages
     return result.coerced_value, result.render_changes()
@@ -68,7 +70,7 @@ def board_name(str_in: str) -> tuple[str, tuple[str, ...]]:
     Raises:
         None
     """
-    result = helper.apply_rule(str_in, rule.BOARD_NAME, mdl.HeaderFields.BOARD_NAME)
+    result = helper.apply_rule(str_in, rule.BOARD_NAME, HeaderLabelsV3.BOARD_NAME)
 
     return result.coerced_value, result.render_changes()
 
@@ -86,7 +88,7 @@ def board_supplier(str_in: str) -> tuple[str, tuple[str, ...]]:
     Raises:
         None
     """
-    result = helper.apply_rule(str_in, rule.BOARD_SUPPLIER, mdl.HeaderFields.BOARD_SUPPLIER)
+    result = helper.apply_rule(str_in, rule.BOARD_SUPPLIER, HeaderLabelsV3.BOARD_SUPPLIER)
     return result.coerced_value, result.render_changes()
 
 
@@ -103,7 +105,7 @@ def build_stage(str_in: str) -> tuple[str, tuple[str, ...]]:
     Raises:
         None
     """
-    result = helper.apply_rule(str_in, rule.BUILD_STAGE, mdl.HeaderFields.BUILD_STAGE)
+    result = helper.apply_rule(str_in, rule.BUILD_STAGE, HeaderLabelsV3.BUILD_STAGE)
     return result.coerced_value, result.render_changes()
 
 
@@ -120,7 +122,7 @@ def bom_date(str_in: str) -> tuple[str, tuple[str, ...]]:
     Raises:
         None
     """
-    result = helper.apply_rule(str_in, rule.BOM_DATE, mdl.HeaderFields.BOM_DATE)
+    result = helper.apply_rule(str_in, rule.BOM_DATE, HeaderLabelsV3.BOM_DATE)
     return result.coerced_value, result.render_changes()
 
 
@@ -137,7 +139,7 @@ def material_cost(str_in: str) -> tuple[str, tuple[str, ...]]:
     Raises:
         None
     """
-    result = helper.apply_rule(str_in, rule.MATERIAL_COST, mdl.HeaderFields.MATERIAL_COST)
+    result = helper.apply_rule(str_in, rule.MATERIAL_COST, HeaderLabelsV3.MATERIAL_COST)
     return result.coerced_value, result.render_changes()
 
 
@@ -154,7 +156,7 @@ def overhead_cost(str_in: str) -> tuple[str, tuple[str, ...]]:
     Raises:
         None
     """
-    result = helper.apply_rule(str_in, rule.OVERHEAD_COST, mdl.HeaderFields.OVERHEAD_COST)
+    result = helper.apply_rule(str_in, rule.OVERHEAD_COST, HeaderLabelsV3.OVERHEAD_COST)
     return result.coerced_value, result.render_changes()
 
 
@@ -171,5 +173,5 @@ def total_cost(str_in: str) -> tuple[str, tuple[str, ...]]:
     Raises:
         None
     """
-    result = helper.apply_rule(str_in, rule.TOTAL_COST, mdl.HeaderFields.TOTAL_COST)
+    result = helper.apply_rule(str_in, rule.TOTAL_COST, HeaderLabelsV3.TOTAL_COST)
     return result.coerced_value, result.render_changes()

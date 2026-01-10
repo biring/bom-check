@@ -29,7 +29,9 @@ License:
 """
 __all__ = []  # Internal-only; not part of public API. Star import from this module gets nothing.
 
-from src.models import interfaces as mdl
+from src.schemas.interfaces import (
+    TableLabelsV3,
+)
 from . import _helper as helper
 from . import _rules as rule
 
@@ -44,7 +46,7 @@ def item(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.ITEM, mdl.RowFields.ITEM)
+    result = helper.apply_rule(str_in, rule.ITEM, TableLabelsV3.ITEM)
 
     return result.coerced_value, result.render_changes()
 
@@ -59,7 +61,7 @@ def component_type(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.COMPONENT_TYPE, mdl.RowFields.COMPONENT)
+    result = helper.apply_rule(str_in, rule.COMPONENT_TYPE, TableLabelsV3.COMPONENT_TYPE)
 
     return result.coerced_value, result.render_changes()
 
@@ -74,7 +76,7 @@ def device_package(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.DEVICE_PACKAGE, mdl.RowFields.PACKAGE)
+    result = helper.apply_rule(str_in, rule.DEVICE_PACKAGE, TableLabelsV3.DEVICE_PACKAGE)
 
     return result.coerced_value, result.render_changes()
 
@@ -89,7 +91,7 @@ def description(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.DESCRIPTION, mdl.RowFields.DESCRIPTION)
+    result = helper.apply_rule(str_in, rule.DESCRIPTION, TableLabelsV3.DESCRIPTION)
 
     return result.coerced_value, result.render_changes()
 
@@ -104,7 +106,7 @@ def units(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.UNITS, mdl.RowFields.UNITS)
+    result = helper.apply_rule(str_in, rule.UNITS, TableLabelsV3.UNITS)
 
     return result.coerced_value, result.render_changes()
 
@@ -119,7 +121,7 @@ def classification(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.CLASSIFICATION, mdl.RowFields.CLASSIFICATION)
+    result = helper.apply_rule(str_in, rule.CLASSIFICATION, TableLabelsV3.CLASSIFICATION)
 
     return result.coerced_value, result.render_changes()
 
@@ -134,7 +136,7 @@ def manufacturer(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.MANUFACTURER, mdl.RowFields.MANUFACTURER)
+    result = helper.apply_rule(str_in, rule.MANUFACTURER, TableLabelsV3.MFG_NAME)
 
     return result.coerced_value, result.render_changes()
 
@@ -149,7 +151,7 @@ def mfg_part_number(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.MFG_PART_NUMBER, mdl.RowFields.MFG_PART_NO)
+    result = helper.apply_rule(str_in, rule.MFG_PART_NUMBER, TableLabelsV3.MFG_PART_NO)
     return result.coerced_value, result.render_changes()
 
 
@@ -163,7 +165,7 @@ def ul_vde_number(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.UL_VDE_NUMBER, mdl.RowFields.UL_VDE_NUMBER)
+    result = helper.apply_rule(str_in, rule.UL_VDE_NUMBER, TableLabelsV3.UL_VDE_NO)
 
     return result.coerced_value, result.render_changes()
 
@@ -178,7 +180,7 @@ def validated_at(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.VALIDATED_AT, mdl.RowFields.VALIDATED_AT)
+    result = helper.apply_rule(str_in, rule.VALIDATED_AT, TableLabelsV3.VALIDATED_AT)
     return result.coerced_value, result.render_changes()
 
 
@@ -192,7 +194,7 @@ def quantity(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.QTY, mdl.RowFields.QTY)
+    result = helper.apply_rule(str_in, rule.QTY, TableLabelsV3.QUANTITY)
 
     return result.coerced_value, result.render_changes()
 
@@ -207,7 +209,7 @@ def designator(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.DESIGNATOR, mdl.RowFields.DESIGNATOR)
+    result = helper.apply_rule(str_in, rule.DESIGNATOR, TableLabelsV3.DESIGNATORS)
 
     return result.coerced_value, result.render_changes()
 
@@ -222,7 +224,7 @@ def unit_price(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.UNIT_PRICE, mdl.RowFields.UNIT_PRICE)
+    result = helper.apply_rule(str_in, rule.UNIT_PRICE, TableLabelsV3.UNIT_PRICE)
 
     return result.coerced_value, result.render_changes()
 
@@ -237,6 +239,6 @@ def sub_total(str_in: str) -> tuple[str, tuple[str, ...]]:
     Returns:
         tuple[str, tuple[str, ...]]: (coerced value, change log)
     """
-    result = helper.apply_rule(str_in, rule.SUB_TOTAL, mdl.RowFields.SUB_TOTAL)
+    result = helper.apply_rule(str_in, rule.SUB_TOTAL, TableLabelsV3.SUB_TOTAL)
 
     return result.coerced_value, result.render_changes()

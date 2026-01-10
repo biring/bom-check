@@ -166,7 +166,7 @@ class TestInterface(_Asserts):
         # ARRANGE
         fn = correct.board_supplier
         good = bfx.HEADER_A
-        expected = bfx.HEADER_A.manufacturer
+        expected = bfx.HEADER_A.board_supplier
 
 
         # ACT
@@ -182,8 +182,8 @@ class TestInterface(_Asserts):
         """
         # ARRANGE
         fn = correct.board_supplier
-        bad = replace(bfx.HEADER_A, manufacturer="\t" + bfx.HEADER_A.manufacturer)
-        expected = bfx.HEADER_A.manufacturer
+        bad = replace(bfx.HEADER_A, board_supplier="\t" + bfx.HEADER_A.board_supplier)
+        expected = bfx.HEADER_A.board_supplier
 
         # ACT
         result, log = _act_with_patch(fn, bad, expected)
@@ -233,8 +233,7 @@ class TestInterface(_Asserts):
         # ARRANGE
         fn = correct.bom_date
         good = bfx.HEADER_A
-        expected = bfx.HEADER_A.date
-
+        expected = bfx.HEADER_A.bom_date
 
         # ACT
         result, log = fn(good)
@@ -249,8 +248,8 @@ class TestInterface(_Asserts):
         """
         # ARRANGE
         fn = correct.bom_date
-        bad = replace(bfx.HEADER_A, date="\t" + bfx.HEADER_A.date)
-        expected = bfx.HEADER_A.date
+        bad = replace(bfx.HEADER_A, bom_date="\t" + bfx.HEADER_A.bom_date)
+        expected = bfx.HEADER_A.bom_date
 
 
         # ACT
@@ -437,7 +436,7 @@ class TestInterface(_Asserts):
         # ARRANGE
         fn = correct.unit
         good = bfx.ROW_A_1
-        expected = bfx.ROW_A_1.unit
+        expected = bfx.ROW_A_1.units
 
 
         # ACT
@@ -453,8 +452,8 @@ class TestInterface(_Asserts):
         """
         # ARRANGE
         fn = correct.unit
-        bad = replace(bfx.ROW_A_1, unit="\t" + bfx.ROW_A_1.unit)
-        expected = bfx.ROW_A_1.unit
+        bad = replace(bfx.ROW_A_1, units="\t" + bfx.ROW_A_1.units)
+        expected = bfx.ROW_A_1.units
 
 
         # ACT
@@ -505,7 +504,7 @@ class TestInterface(_Asserts):
         # ARRANGE
         fn = correct.manufacturer
         good = bfx.ROW_A_1
-        expected = bfx.ROW_A_1.manufacturer
+        expected = bfx.ROW_A_1.mfg_name
 
 
         # ACT
@@ -521,8 +520,8 @@ class TestInterface(_Asserts):
         """
         # ARRANGE
         fn = correct.manufacturer
-        bad = replace(bfx.ROW_A_1, manufacturer="\t" + bfx.ROW_A_1.manufacturer)
-        expected = bfx.ROW_A_1.manufacturer
+        bad = replace(bfx.ROW_A_1, mfg_name="\t" + bfx.ROW_A_1.mfg_name)
+        expected = bfx.ROW_A_1.mfg_name
 
 
         # ACT
@@ -675,7 +674,7 @@ class TestInterface(_Asserts):
         # ARRANGE
         fn = correct.designator
         good = bfx.ROW_A_1
-        expected = bfx.ROW_A_1.designator
+        expected = bfx.ROW_A_1.designators
 
 
         # ACT
@@ -691,8 +690,8 @@ class TestInterface(_Asserts):
         """
         # ARRANGE
         fn = correct.designator
-        bad = replace(bfx.ROW_A_1, designator="\t" + bfx.ROW_A_1.designator)
-        expected = bfx.ROW_A_1.designator
+        bad = replace(bfx.ROW_A_1, designators="\t" + bfx.ROW_A_1.designators)
+        expected = bfx.ROW_A_1.designators
 
 
         # ACT
@@ -787,8 +786,8 @@ class TestInterface(_Asserts):
         """
         # ARRANGE
         fn = correct.expand_designators
-        bad = replace(bfx.ROW_B2_1, designator="R5-R10")
-        expected = bfx.ROW_B2_1.designator
+        bad = replace(bfx.ROW_B2_1, designators="R5-R10")
+        expected = bfx.ROW_B2_1.designators
 
         # ACT
         result, log = fn(bad)
@@ -804,7 +803,7 @@ class TestInterface(_Asserts):
         # ARRANGE
         fn = correct.expand_designators
         good = bfx.ROW_B2_1
-        expected = bfx.ROW_B2_1.designator
+        expected = bfx.ROW_B2_1.designators
 
         # ACT
         result, log = fn(good)

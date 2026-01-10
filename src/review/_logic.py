@@ -31,17 +31,20 @@ License:
 """
 __all__: list[str] = []  # Internal-only; not part of public API. Star import from this module gets nothing.
 
-from src.models import interfaces as model
+from src.models.interfaces import (
+    HeaderV3,
+    RowV3,
+)
 from src.approve import interfaces as approve
 from src.review import _common as common  # kept for parity with header/row review modules
 
 
-def quantity_zero(row: model.Row) -> str:
+def quantity_zero(row: RowV3) -> str:
     """
     Validate quantity is zero when item is blank.
 
     Args:
-        row (Row): BOM row to validate.
+        row (RowV3): BOM row to validate.
 
     Returns:
         str: "" if valid; otherwise a descriptive error message.
@@ -49,12 +52,12 @@ def quantity_zero(row: model.Row) -> str:
     return common.review_and_capture_by_args(approve.quantity_zero, row)
 
 
-def designator_required(row: model.Row) -> str:
+def designator_required(row: RowV3) -> str:
     """
     Validate designator is specified when quantity is an integer more than zero.
 
     Args:
-        row (Row): BOM row to validate.
+        row (RowV3): BOM row to validate.
 
     Returns:
         str: "" if valid; otherwise a descriptive error message.
@@ -62,12 +65,12 @@ def designator_required(row: model.Row) -> str:
     return common.review_and_capture_by_args(approve.designator_required, row)
 
 
-def designator_count(row: model.Row) -> str:
+def designator_count(row: RowV3) -> str:
     """
     Validate the comma-separated designator count equals the integer quantity.
 
     Args:
-        row (Row): BOM row to validate.
+        row (RowV3): BOM row to validate.
 
     Returns:
         str: "" if valid; otherwise a descriptive error message.
@@ -75,12 +78,12 @@ def designator_count(row: model.Row) -> str:
     return common.review_and_capture_by_args(approve.designator_count, row)
 
 
-def unit_price_specified(row: model.Row) -> str:
+def unit_price_specified(row: RowV3) -> str:
     """
     Validate unit price is greater than zero when quantity is greater than zero.
 
     Args:
-        row (Row): BOM row to validate.
+        row (RowV3): BOM row to validate.
 
     Returns:
         str: "" if valid; otherwise a descriptive error message.
@@ -88,12 +91,12 @@ def unit_price_specified(row: model.Row) -> str:
     return common.review_and_capture_by_args(approve.unit_price_specified, row)
 
 
-def subtotal_zero(row: model.Row) -> str:
+def subtotal_zero(row: RowV3) -> str:
     """
     Validate sub-total is zero when quantity is zero.
 
     Args:
-        row (Row): BOM row to validate.
+        row (RowV3): BOM row to validate.
 
     Returns:
         str: "" if valid; otherwise a descriptive error message.
@@ -101,12 +104,12 @@ def subtotal_zero(row: model.Row) -> str:
     return common.review_and_capture_by_args(approve.subtotal_zero, row)
 
 
-def sub_total_calculation(row: model.Row) -> str:
+def sub_total_calculation(row: RowV3) -> str:
     """
     Validate sub-total equals (quantity * unit price).
 
     Args:
-        row (Row): BOM row to validate.
+        row (RowV3): BOM row to validate.
 
     Returns:
         str: "" if valid; otherwise a descriptive error message.
@@ -114,13 +117,13 @@ def sub_total_calculation(row: model.Row) -> str:
     return common.review_and_capture_by_args(approve.sub_total_calculation, row)
 
 
-def material_cost_calculation(rows: tuple[model.Row, ...], header: model.Header) -> str:
+def material_cost_calculation(rows: tuple[RowV3, ...], header: HeaderV3) -> str:
     """
     Validate header.material_cost equals the aggregate of row sub_totals.
 
     Args:
         rows (tuple[Row, ...]): Collection of BOM rows.
-        header (Header): BOM header containing the material_cost to validate.
+        header (HeaderV3): BOM header containing the material_cost to validate.
 
     Returns:
         str: "" if valid; otherwise a descriptive error message.
@@ -128,12 +131,12 @@ def material_cost_calculation(rows: tuple[model.Row, ...], header: model.Header)
     return common.review_and_capture_by_args(approve.material_cost_calculation, rows, header)
 
 
-def total_cost_calculation(header: model.Header) -> str:
+def total_cost_calculation(header: HeaderV3) -> str:
     """
     Validate header.total_cost equals (material_cost + overhead_cost).
 
     Args:
-        header (Header): BOM header with cost fields.
+        header (HeaderV3): BOM header with cost fields.
 
     Returns:
         str: "" if valid; otherwise a descriptive error message.

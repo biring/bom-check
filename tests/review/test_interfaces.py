@@ -26,10 +26,13 @@ Notes:
 import unittest
 
 import src.review.interfaces as review
-from src.models.interfaces import Row, Header
+from src.models.interfaces import (
+    RowV3,
+    HeaderV3,
+)
 
 
-class TestRow(unittest.TestCase):
+class TestRowV3(unittest.TestCase):
     """
     Smoke and negative tests for Row validators in the public interface.
     """
@@ -96,7 +99,7 @@ class TestRow(unittest.TestCase):
                 self.assertIsNot(result, "")
 
 
-class TestHeader(unittest.TestCase):
+class TestHeaderV3(unittest.TestCase):
     """
     Smoke and negative tests for header validators in the public interface.
 
@@ -163,22 +166,22 @@ class TestLogic(unittest.TestCase):
         # ARRANGE
         row_cases = [
             # quantity_zero: qty == 0 when item is blank
-            (review.quantity_zero, Row(item="", qty="0")),
+            (review.quantity_zero, RowV3(item="", qty="0")),
 
             # designator_required: designator non-empty when qty is integer >= 1
-            (review.designator_required, Row(qty="2", designator="R1,R2")),
+            (review.designator_required, RowV3(qty="2", designators="R1,R2")),
 
             # designator_count: count(designators) == integer qty
-            (review.designator_count, Row(qty="3", designator="C1, C2, C3")),
+            (review.designator_count, RowV3(qty="3", designators="C1, C2, C3")),
 
             # unit_price_specified: unit_price > 0 when qty > 0
-            (review.unit_price_specified, Row(qty="0.5", unit_price="0.01")),
+            (review.unit_price_specified, RowV3(qty="0.5", unit_price="0.01")),
 
             # subtotal_zero: sub_total == 0 when qty == 0
-            (review.subtotal_zero, Row(qty="0", sub_total="0")),
+            (review.subtotal_zero, RowV3(qty="0", sub_total="0")),
 
             # sub_total_calculation: sub_total == qty * unit_price
-            (review.sub_total_calculation, Row(qty="2", unit_price="3.25", sub_total="6.50")),
+            (review.sub_total_calculation, RowV3(qty="2", unit_price="3.25", sub_total="6.50")),
         ]
         expected = ""
 
@@ -196,22 +199,22 @@ class TestLogic(unittest.TestCase):
         # ARRANGE
         row_cases = [
             # quantity_zero: invalid when item is blank and qty != 0
-            (review.quantity_zero, Row(item="", qty="1")),
+            (review.quantity_zero, RowV3(item="", qty="1")),
 
             # designator_required: invalid when qty integer >= 1 and designator is blank
-            (review.designator_required, Row(qty="1", designator="")),
+            (review.designator_required, RowV3(qty="1", designators="")),
 
             # designator_count: invalid when count(designators) != integer qty
-            (review.designator_count, Row(qty="3", designator="C1,C2")),
+            (review.designator_count, RowV3(qty="3", designators="C1,C2")),
 
             # unit_price_specified: invalid when qty > 0 and unit_price <= 0
-            (review.unit_price_specified, Row(qty="1", unit_price="0")),
+            (review.unit_price_specified, RowV3(qty="1", unit_price="0")),
 
             # subtotal_zero: invalid when qty == 0 and sub_total != 0
-            (review.subtotal_zero, Row(qty="0", sub_total="0.01")),
+            (review.subtotal_zero, RowV3(qty="0", sub_total="0.01")),
 
             # sub_total_calculation: invalid when sub_total != qty * unit_price
-            (review.sub_total_calculation, Row(qty="2", unit_price="0.2", sub_total="0.5")),
+            (review.sub_total_calculation, RowV3(qty="2", unit_price="0.2", sub_total="0.5")),
         ]
 
         # ACT / ASSERT
@@ -227,11 +230,11 @@ class TestLogic(unittest.TestCase):
         """
         # ARRANGE
         rows = [
-            Row(sub_total="0.50"),
-            Row(sub_total="0.50"),
-            Row(sub_total="0.00"),  # include a zero to ensure aggregation works
+            RowV3(sub_total="0.50"),
+            RowV3(sub_total="0.50"),
+            RowV3(sub_total="0.00"),  # include a zero to ensure aggregation works
         ]
-        header = Header(material_cost="1.00", overhead_cost="0.25", total_cost="1.25")
+        header = HeaderV3(material_cost="1.00", overhead_cost="0.25", total_cost="1.25")
 
         valid_cases = [
             # material_cost == sum(sub_totals)
@@ -258,11 +261,11 @@ class TestLogic(unittest.TestCase):
         """
         # ARRANGE
         rows = [
-            Row(sub_total="0.50"),
-            Row(sub_total="0.50"),
+            RowV3(sub_total="0.50"),
+            RowV3(sub_total="0.50"),
         ]
-        header_wrong_material = Header(material_cost="1.10", overhead_cost="0.25", total_cost="1.25")
-        header_wrong_total = Header(material_cost="1.00", overhead_cost="0.25", total_cost="1.20")
+        header_wrong_material = HeaderV3(material_cost="1.10", overhead_cost="0.25", total_cost="1.25")
+        header_wrong_total = HeaderV3(material_cost="1.00", overhead_cost="0.25", total_cost="1.20")
 
         invalid_cases = [
             # material_cost != sum(sub_totals)

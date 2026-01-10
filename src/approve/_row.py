@@ -26,7 +26,10 @@ License:
     - Internal Use Only
 """
 
-from src.models import interfaces as models
+from src.schemas.interfaces import (
+    TableLabelsV3,
+)
+
 from src.approve import _common as common
 from src.approve import _constants as constants
 
@@ -49,7 +52,7 @@ def item(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.ITEM_PATTERN,
-        models.RowFields.ITEM,
+        TableLabelsV3.ITEM,
         constants.ITEM_RULE,
     )
 
@@ -72,7 +75,7 @@ def component_type(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.COMPONENT_TYPE_PATTERN,
-        models.RowFields.COMPONENT,
+        TableLabelsV3.COMPONENT_TYPE,
         constants.COMPONENT_TYPE_RULE,
     )
 
@@ -95,7 +98,7 @@ def device_package(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.DEVICE_PACKAGE_PATTERN,
-        models.RowFields.PACKAGE,
+        TableLabelsV3.DEVICE_PACKAGE,
         constants.DEVICE_PACKAGE_RULE,
     )
 
@@ -118,7 +121,7 @@ def description(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.DESCRIPTION_PATTERN,
-        models.RowFields.DESCRIPTION,
+        TableLabelsV3.DESCRIPTION,
         constants.DESCRIPTION_RULE,
     )
 
@@ -141,7 +144,7 @@ def units(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.UNITS_PATTERN,
-        models.RowFields.UNITS,
+        TableLabelsV3.UNITS,
         constants.UNITS_RULE,
     )
 
@@ -164,7 +167,7 @@ def classification(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.CLASSIFICATION_PATTERN,
-        models.RowFields.CLASSIFICATION,
+        TableLabelsV3.CLASSIFICATION,
         constants.CLASSIFICATION_RULE,
     )
 
@@ -187,7 +190,7 @@ def mfg_name(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.MFG_NAME_PATTERN,
-        models.RowFields.MANUFACTURER,
+        TableLabelsV3.MFG_NAME,
         constants.MFG_NAME_RULE,
     )
 
@@ -210,7 +213,7 @@ def mfg_part_no(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.MFG_PART_NO_PATTERN,
-        models.RowFields.MFG_PART_NO,
+        TableLabelsV3.MFG_PART_NO,
         constants.MFG_PART_NO_RULE,
     )
 
@@ -233,7 +236,7 @@ def ul_vde_number(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.UL_VDE_NO_PATTERN,
-        models.RowFields.UL_VDE_NUMBER,
+        TableLabelsV3.UL_VDE_NO,
         constants.UL_VDE_NO_RULE,
     )
 
@@ -256,7 +259,7 @@ def validated_at(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.VALIDATED_AT_PATTERN,
-        models.RowFields.VALIDATED_AT,
+        TableLabelsV3.VALIDATED_AT,
         constants.VALIDATED_AT_RULE,
     )
 
@@ -279,7 +282,7 @@ def quantity(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.QUANTITY_PATTERN,
-        models.RowFields.QTY,
+        TableLabelsV3.QUANTITY,
         constants.QUANTITY_RULE,
     )
 
@@ -302,7 +305,7 @@ def designator(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.DESIGNATOR_PATTERN,
-        models.RowFields.DESIGNATOR,
+        TableLabelsV3.DESIGNATORS,
         constants.DESIGNATOR_RULE,
     )
 
@@ -325,7 +328,7 @@ def unit_price(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.PRICE_PATTERN,
-        models.RowFields.UNIT_PRICE,
+        TableLabelsV3.UNIT_PRICE,
         constants.PRICE_RULE,
     )
 
@@ -348,6 +351,6 @@ def sub_total(value: str) -> None:
     common.approve_or_raise(
         value,
         constants.PRICE_PATTERN,
-        models.RowFields.SUB_TOTAL,
+        TableLabelsV3.SUB_TOTAL,
         constants.PRICE_RULE,
     )

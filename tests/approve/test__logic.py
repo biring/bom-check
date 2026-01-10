@@ -107,7 +107,7 @@ class TestDesignatorRequired(unittest.TestCase):
         Should raise when qty >= 1 (integer) and designator is blank.
         """
         # ARRANGE
-        row = replace(bfx.ROW_A_1, qty="3", designator="")
+        row = replace(bfx.ROW_A_1, qty="3", designators="")
         expected = ValueError.__name__
 
         # ACT
@@ -126,7 +126,7 @@ class TestDesignatorRequired(unittest.TestCase):
         Should pass when qty == 0 regardless of designator content.
         """
         # ARRANGE
-        row = replace(bfx.ROW_A_1, qty="0", designator="")
+        row = replace(bfx.ROW_A_1, qty="0", designators="")
         expected = None
 
         # ACT
@@ -145,7 +145,7 @@ class TestDesignatorRequired(unittest.TestCase):
         Should skip when qty is not an integer-parsable value.
         """
         # ARRANGE
-        row = replace(bfx.ROW_A_1, qty="1.5", designator="")  # int() would raise
+        row = replace(bfx.ROW_A_1, qty="1.5", designators="")  # int() would raise
         expected = None
 
         # ACT
@@ -171,8 +171,8 @@ class TestDesignatorCount(unittest.TestCase):
         """
         # ARRANGE
         rows = (
-            replace(bfx.ROW_A_1, qty="3", designator="C1, C2"),  # only 2 designators
-            replace(bfx.ROW_A_1, qty="1", designator=""),  # designator missing
+            replace(bfx.ROW_A_1, qty="3", designators="C1, C2"),  # only 2 designators
+            replace(bfx.ROW_A_1, qty="1", designators=""),  # designator missing
         )
         expected = ValueError.__name__
 
@@ -193,7 +193,7 @@ class TestDesignatorCount(unittest.TestCase):
         Should pass when designator count equals integer qty.
         """
         # ARRANGE
-        row = replace(bfx.ROW_A_1, qty="3", designator="C1, C2, C3")
+        row = replace(bfx.ROW_A_1, qty="3", designators="C1, C2, C3")
         expected = None
 
         # ACT
@@ -213,9 +213,9 @@ class TestDesignatorCount(unittest.TestCase):
         """
         # ARRANGE
         rows = (
-            replace(bfx.ROW_A_1, qty="", designator="C1"),  # qty is unparsable to integer
-            replace(bfx.ROW_A_1, qty="0", designator="C1, C2, C3"),  # zero is ignored
-            replace(bfx.ROW_A_1, qty="1.56", designator=""),  # qty float is ignored
+            replace(bfx.ROW_A_1, qty="", designators="C1"),  # qty is unparsable to integer
+            replace(bfx.ROW_A_1, qty="0", designators="C1, C2, C3"),  # zero is ignored
+            replace(bfx.ROW_A_1, qty="1.56", designators=""),  # qty float is ignored
         )
         expected = None
 

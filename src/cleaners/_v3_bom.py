@@ -29,21 +29,37 @@ __all__ = []  # Internal-only; not part of public API. Star import from this mod
 
 from src.common import ChangeLog
 
-from src.models import interfaces as mdl
 from src.coerce import interfaces as coerce
 
+from src.adapters.interfaces import (
+    map_template_v3_header_to_bom_v3_header,
+    map_template_v3_table_to_bom_v3_row,
+)
 
-def clean_v3_bom(bom: mdl.Bom) -> tuple[mdl.Bom, tuple[str, ...]]:
+from src.models.interfaces import (
+    BomV3,
+    BoardV3,
+    HeaderV3,
+    RowV3,
+)
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
+
+
+def clean_v3_bom(bom: BomV3) -> tuple[BomV3, tuple[str, ...]]:
     """
     Clean a Version 3 BOM by coercing all board headers and rows and collecting a change log.
 
     Traverses each board in the BOM, normalizes row fields and header fields using the `src.coerce.interfaces` functions, and rebuilds the BOM with coerced values. A contextual change log (file → sheet → section) is returned for auditability.
 
     Args:
-        bom (mdl.Bom): Input BOM containing boards, headers, and rows to be coerced.
+        bom (BomV3): Input BOM containing boards, headers, and rows to be coerced.
 
     Returns:
-        tuple[mdl.Bom, tuple[str, ...]]: A 2-tuple of (coerced_bom, change_log_messages).
+        tuple[BomV3, tuple[str, ...]]: A 2-tuple of (coerced_bom, change_log_messages).
 
     Raises:
         ValueError: If reconstruction of any board, header, or row fails due to an invalid field mapping.
@@ -53,7 +69,7 @@ def clean_v3_bom(bom: mdl.Bom) -> tuple[mdl.Bom, tuple[str, ...]]:
     change_log.set_module_name("Cleaner")
     change_log.set_file_name(bom.file_name)
 
-    clean_boards: list[mdl.Board] = []
+    clean_boards: list[BoardV3] = []
 
     # Iterate through each board in the BOM
     for board in bom.boards:
@@ -61,22 +77,22 @@ def clean_v3_bom(bom: mdl.Bom) -> tuple[mdl.Bom, tuple[str, ...]]:
         change_log.set_sheet_name(board.sheet_name)
 
         # Coerce all rows within current board
-        clean_rows: list[mdl.Row] = []
+        clean_rows: list[RowV3] = []
         for idx, raw_row in enumerate(board.rows, start=1):
-            change_log.set_section_name(mdl.Row.__name__ + ": " + str(idx))
+            change_log.set_section_name(RowV3.__name__ + ": " + str(idx))
             clean_row = _clean_row(change_log, raw_row)
             clean_rows.append(clean_row)
 
         # Coerce header fields for the current board
-        change_log.set_section_name(mdl.Header.__name__)
+        change_log.set_section_name(HeaderV3.__name__)
         clean_header = _clean_header(change_log, board.header)
 
         ## Reconstruct the Board object with coerced fields
-        clean_board: mdl.Board = mdl.Board(header=clean_header, rows=tuple(clean_rows), sheet_name=board.sheet_name)
+        clean_board: BoardV3 = BoardV3(header=clean_header, rows=tuple(clean_rows), sheet_name=board.sheet_name)
         clean_boards.append(clean_board)
 
     # Collect all cleaned boards and reconstruct final BOM
-    clean_bom: mdl.Bom = mdl.Bom(boards=tuple(clean_boards), file_name=bom.file_name)
+    clean_bom: BomV3 = BomV3(boards=tuple(clean_boards), file_name=bom.file_name)
 
     # Extract full log snapshot for external reporting
     frozen_change_log = change_log.render()
@@ -84,42 +100,40 @@ def clean_v3_bom(bom: mdl.Bom) -> tuple[mdl.Bom, tuple[str, ...]]:
     return clean_bom, frozen_change_log
 
 
-def _clean_header(change_log: ChangeLog, header: mdl.Header) -> mdl.Header:
+def _clean_header(change_log: ChangeLog, header: HeaderV3) -> HeaderV3:
     """
     Coerce and normalize all row fields and append emitted messages to the shared log.
 
-    Applies field-specific coercers in a defined order, maps label-based fields to dataclass attributes, and rebuilds a normalized `mdl.Row`.
+    Applies field-specific coercers in a defined order, maps label-based fields to dataclass attributes, and rebuilds a normalized `RowV3`.
 
     Args:
         change_log (ChangeLog): Shared context-aware change log collector.
-        header (mdl.Header): Raw header instance.
+        header (HeaderV3): Raw header instance.
 
     Returns:
-        mdl.Header: New header with normalized values.
+        HeaderV3: New header with normalized values.
 
     Raises:
-        ValueError: If any coerced values cannot be mapped back to `mdl.Row` fields during reconstruction.
+        ValueError: If any coerced values cannot be mapped back to `RowV3` fields during reconstruction.
     """
     field_map = {}
 
     # Define ordered header cleaning sequence (function, value, attribute)
     cases = [
-        (coerce.model_number, header.model_no, mdl.HeaderFields.MODEL_NUMBER),
-        (coerce.board_name, header.board_name, mdl.HeaderFields.BOARD_NAME),
-        (coerce.board_supplier, header.manufacturer, mdl.HeaderFields.BOARD_SUPPLIER),
-        (coerce.build_stage, header.build_stage, mdl.HeaderFields.BUILD_STAGE),
-        (coerce.bom_date, header.date, mdl.HeaderFields.BOM_DATE),
-        (coerce.material_cost, header.material_cost, mdl.HeaderFields.MATERIAL_COST),
-        (coerce.overhead_cost, header.overhead_cost, mdl.HeaderFields.OVERHEAD_COST),
-        (coerce.total_cost, header.total_cost, mdl.HeaderFields.TOTAL_COST),
+        (coerce.model_number, header.model_no, HeaderLabelsV3.MODEL_NO),
+        (coerce.board_name, header.board_name, HeaderLabelsV3.BOARD_NAME),
+        (coerce.board_supplier, header.board_supplier, HeaderLabelsV3.BOARD_SUPPLIER),
+        (coerce.build_stage, header.build_stage, HeaderLabelsV3.BUILD_STAGE),
+        (coerce.bom_date, header.bom_date, HeaderLabelsV3.BOM_DATE),
+        (coerce.material_cost, header.material_cost, HeaderLabelsV3.MATERIAL_COST),
+        (coerce.overhead_cost, header.overhead_cost, HeaderLabelsV3.OVERHEAD_COST),
+        (coerce.total_cost, header.total_cost, HeaderLabelsV3.TOTAL_COST),
     ]
 
     # Apply coercion for each field and collect logs
-    for fn, val, attr in cases:
+    for fn, val, label in cases:
         result_value, result_logs = fn(val)
-        attr_name = mdl.Header.get_attr_name_by_label(attr)
-        attr_value = result_value
-        field_map[attr_name] = attr_value
+        field_map[label] = result_value
 
         # Record each formatted message in the shared coercion log
         for result_log in result_logs:
@@ -127,7 +141,7 @@ def _clean_header(change_log: ChangeLog, header: mdl.Header) -> mdl.Header:
 
     # Rebuild header object with coerced values
     try:
-        return mdl.Header(**field_map)
+        return map_template_v3_header_to_bom_v3_header(field_map)
     except Exception as e:
         # Raise detailed error if any field mapping fails
         raise ValueError(
@@ -135,7 +149,7 @@ def _clean_header(change_log: ChangeLog, header: mdl.Header) -> mdl.Header:
         ) from e
 
 
-def _clean_row(change_log: ChangeLog, row: mdl.Row) -> mdl.Row:
+def _clean_row(change_log: ChangeLog, row: RowV3) -> RowV3:
     """
     Clean (coerce and normalize) all row-level fields.
 
@@ -143,10 +157,10 @@ def _clean_row(change_log: ChangeLog, row: mdl.Row) -> mdl.Row:
 
     Args:
         change_log (help.CleanLog): Shared log collector for contextual tracking.
-        row (mdl.Row): Input row object with raw field values.
+        row (RowV3): Input row object with raw field values.
 
     Returns:
-        mdl.Row: New row instance with normalized field values.
+        RowV3: New row instance with normalized field values.
 
     Raises:
         ValueError: If field mapping fails during row reconstruction.
@@ -156,28 +170,26 @@ def _clean_row(change_log: ChangeLog, row: mdl.Row) -> mdl.Row:
 
     # Define ordered row coercion sequence (function, value, attribute)
     cases = [
-        (coerce.item, row.item, mdl.RowFields.ITEM),
-        (coerce.component_type, row.component_type, mdl.RowFields.COMPONENT),
-        (coerce.device_package, row.device_package, mdl.RowFields.PACKAGE),
-        (coerce.description, row.description, mdl.RowFields.DESCRIPTION),
-        (coerce.units, row.unit, mdl.RowFields.UNITS),
-        (coerce.classification, row.classification, mdl.RowFields.CLASSIFICATION),
-        (coerce.manufacturer, row.manufacturer, mdl.RowFields.MANUFACTURER),
-        (coerce.mfg_part_number, row.mfg_part_number, mdl.RowFields.MFG_PART_NO),
-        (coerce.ul_vde_number, row.ul_vde_number, mdl.RowFields.UL_VDE_NUMBER),
-        (coerce.validated_at, row.validated_at, mdl.RowFields.VALIDATED_AT),
-        (coerce.quantity, row.qty, mdl.RowFields.QTY),
-        (coerce.designator, row.designator, mdl.RowFields.DESIGNATOR),
-        (coerce.unit_price, row.unit_price, mdl.RowFields.UNIT_PRICE),
-        (coerce.sub_total, row.sub_total, mdl.RowFields.SUB_TOTAL),
+        (coerce.item, row.item, TableLabelsV3.ITEM),
+        (coerce.component_type, row.component_type, TableLabelsV3.COMPONENT_TYPE),
+        (coerce.device_package, row.device_package, TableLabelsV3.DEVICE_PACKAGE),
+        (coerce.description, row.description, TableLabelsV3.DESCRIPTION),
+        (coerce.units, row.units, TableLabelsV3.UNITS),
+        (coerce.classification, row.classification, TableLabelsV3.CLASSIFICATION),
+        (coerce.manufacturer, row.mfg_name, TableLabelsV3.MFG_NAME),
+        (coerce.mfg_part_number, row.mfg_part_number, TableLabelsV3.MFG_PART_NO),
+        (coerce.ul_vde_number, row.ul_vde_number, TableLabelsV3.UL_VDE_NO),
+        (coerce.validated_at, row.validated_at, TableLabelsV3.VALIDATED_AT),
+        (coerce.quantity, row.qty, TableLabelsV3.QUANTITY),
+        (coerce.designator, row.designators, TableLabelsV3.DESIGNATORS),
+        (coerce.unit_price, row.unit_price, TableLabelsV3.UNIT_PRICE),
+        (coerce.sub_total, row.sub_total, TableLabelsV3.SUB_TOTAL),
     ]
 
     # Apply coercion for each field and collect logs
-    for fn, val, attr in cases:
+    for fn, val, label in cases:
         result_value, result_logs = fn(val)
-        attr_name = mdl.Row.get_attr_name_by_label(attr)
-        attr_value = result_value
-        field_map[attr_name] = attr_value
+        field_map[label] = result_value
 
         # Append each formatted message to the shared coercion log
         for result_log in result_logs:
@@ -185,7 +197,7 @@ def _clean_row(change_log: ChangeLog, row: mdl.Row) -> mdl.Row:
 
     # Rebuild the row object with coerced values
     try:
-        return mdl.Row(**field_map)
+        return map_template_v3_table_to_bom_v3_row(field_map)
     except Exception as e:
         raise ValueError(
             # Raise detailed error if mapping fails

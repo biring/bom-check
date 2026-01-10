@@ -31,7 +31,11 @@ License:
 __all__ = []  # Internal-only; not part of public API. Star import from this module gets nothing
 
 import src.utils as utils
-from src.models import interfaces as models
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+)
+
 from . import _constants as constants
 
 
@@ -54,8 +58,8 @@ def model_number(value: str) -> None:
     if not constants.MODEL_NUMBER_PATTERN.fullmatch(value):
         # Raise error with both generic and field-specific guidance
         raise ValueError(
-            constants.GENERIC_VALUE_ERROR_MSG.format(a=models.HeaderFields.MODEL_NUMBER, b=value)
-            + constants.MODEL_NUMBER_RULE.format(a=models.HeaderFields.MODEL_NUMBER)
+            constants.GENERIC_VALUE_ERROR_MSG.format(a=HeaderLabelsV3.MODEL_NO, b=value)
+            + constants.MODEL_NUMBER_RULE.format(a=HeaderLabelsV3.MODEL_NO)
         )
 
 
@@ -78,8 +82,8 @@ def board_name(value: str) -> None:
     if not constants.BOARD_NAME_PATTERN.fullmatch(value):
         # Raise error with both generic and field-specific guidance
         raise ValueError(
-            constants.GENERIC_VALUE_ERROR_MSG.format(a=models.HeaderFields.BOARD_NAME, b=value)
-            + constants.BOARD_NAME_RULE.format(a=models.HeaderFields.BOARD_NAME)
+            constants.GENERIC_VALUE_ERROR_MSG.format(a=HeaderLabelsV3.BOARD_NAME, b=value)
+            + constants.BOARD_NAME_RULE.format(a=HeaderLabelsV3.BOARD_NAME)
         )
 
 
@@ -102,8 +106,8 @@ def board_supplier(value: str) -> None:
     if not constants.BOARD_SUPPLIER_PATTERN.fullmatch(value):
         # Raise error with both generic and field-specific guidance
         raise ValueError(
-            constants.GENERIC_VALUE_ERROR_MSG.format(a=models.HeaderFields.BOARD_SUPPLIER, b=value)
-            + constants.BOARD_SUPPLIER_RULE.format(a=models.HeaderFields.BOARD_SUPPLIER)
+            constants.GENERIC_VALUE_ERROR_MSG.format(a=HeaderLabelsV3.BOARD_SUPPLIER, b=value)
+            + constants.BOARD_SUPPLIER_RULE.format(a=HeaderLabelsV3.BOARD_SUPPLIER)
         )
 
 
@@ -130,8 +134,8 @@ def build_stage(value: str) -> None:
     if not constants.BUILD_STAGE_PATTERN.fullmatch(value):
         # Raise error with both generic and field-specific guidance
         raise ValueError(
-            constants.GENERIC_VALUE_ERROR_MSG.format(a=models.HeaderFields.BUILD_STAGE, b=value)
-            + constants.BUILD_STAGE_RULE.format(a=models.HeaderFields.BUILD_STAGE)
+            constants.GENERIC_VALUE_ERROR_MSG.format(a=HeaderLabelsV3.BUILD_STAGE, b=value)
+            + constants.BUILD_STAGE_RULE.format(a=HeaderLabelsV3.BUILD_STAGE)
         )
 
 
@@ -161,7 +165,7 @@ def bom_date(value: str) -> None:
     except ValueError as err:
         # Raise error with both generic and field-specific guidance
         raise ValueError(
-            constants.GENERIC_VALUE_ERROR_MSG.format(a=models.HeaderFields.BOM_DATE, b=value)
+            constants.GENERIC_VALUE_ERROR_MSG.format(a=HeaderLabelsV3.BOM_DATE, b=value)
             + f"{err}") from err
 
 
@@ -187,8 +191,8 @@ def material_cost(value: str) -> None:
     except ValueError:
         # Raise error with both generic and field-specific guidance
         raise ValueError(
-            constants.GENERIC_VALUE_ERROR_MSG.format(a=models.HeaderFields.MATERIAL_COST, b=value)
-            + constants.COST_RULE.format(a=models.HeaderFields.MATERIAL_COST)
+            constants.GENERIC_VALUE_ERROR_MSG.format(a=HeaderLabelsV3.MATERIAL_COST, b=value)
+            + constants.COST_RULE.format(a=HeaderLabelsV3.MATERIAL_COST)
         )
 
 
@@ -214,8 +218,8 @@ def overhead_cost(value: str) -> None:
     except ValueError:
         # Raise error with both generic and field-specific guidance
         raise ValueError(
-            constants.GENERIC_VALUE_ERROR_MSG.format(a=models.HeaderFields.OVERHEAD_COST, b=value)
-            + constants.COST_RULE.format(a=models.HeaderFields.OVERHEAD_COST)
+            constants.GENERIC_VALUE_ERROR_MSG.format(a=HeaderLabelsV3.OVERHEAD_COST, b=value)
+            + constants.COST_RULE.format(a=HeaderLabelsV3.OVERHEAD_COST)
         )
 
 
@@ -241,6 +245,6 @@ def total_cost(value: str) -> None:
     except ValueError:
         # Raise error with both generic and field-specific guidance
         raise ValueError(
-            constants.GENERIC_VALUE_ERROR_MSG.format(a=models.HeaderFields.TOTAL_COST, b=value)
-            + constants.COST_RULE.format(a=models.HeaderFields.TOTAL_COST)
+            constants.GENERIC_VALUE_ERROR_MSG.format(a=HeaderLabelsV3.TOTAL_COST, b=value)
+            + constants.COST_RULE.format(a=HeaderLabelsV3.TOTAL_COST)
         )

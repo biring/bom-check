@@ -24,7 +24,12 @@ License:
 
 import unittest
 from dataclasses import replace
-from src.models import interfaces as mdl
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
+
 from src.common import ChangeLog as IssueLog
 # noinspection PyProtectedMember
 from src.checkers import _v3_bom as bck
@@ -76,32 +81,32 @@ class TestCheckRowValue(unittest.TestCase):
             replace(bfx.ROW_A_1, component_type=vfx.COMP_TYPE_BAD[0]),
             replace(bfx.ROW_A_1, device_package=vfx.DEVICE_PACKAGE_BAD[0]),
             replace(bfx.ROW_A_1, description=vfx.DESCRIPTION_BAD[0]),
-            replace(bfx.ROW_A_1, unit=vfx.UNITS_BAD[0]),
+            replace(bfx.ROW_A_1, units=vfx.UNITS_BAD[0]),
             replace(bfx.ROW_A_1, classification=vfx.CLASSIFICATION_BAD[0]),
-            replace(bfx.ROW_A_1, manufacturer=vfx.MFG_NAME_BAD[0]),
+            replace(bfx.ROW_A_1, mfg_name=vfx.MFG_NAME_BAD[0]),
             replace(bfx.ROW_A_1, mfg_part_number=vfx.MFG_PART_NO_BAD[0]),
             replace(bfx.ROW_A_1, ul_vde_number=vfx.UL_VDE_NO_BAD[0]),
             replace(bfx.ROW_A_1, validated_at=vfx.VALIDATED_AT_BAD[0]),
             replace(bfx.ROW_A_1, qty=vfx.QUANTITY_BAD[0]),
-            replace(bfx.ROW_A_1, designator=vfx.DESIGNATOR_BAD[0]),
+            replace(bfx.ROW_A_1, designators=vfx.DESIGNATOR_BAD[0]),
             replace(bfx.ROW_A_1, unit_price=vfx.PRICE_BAD[0]),
             replace(bfx.ROW_A_1, sub_total=vfx.PRICE_BAD[0]),
         )
         expected_errors = (
-            mdl.RowFields.ITEM,
-            mdl.RowFields.COMPONENT,
-            mdl.RowFields.PACKAGE,
-            mdl.RowFields.DESCRIPTION,
-            mdl.RowFields.UNITS,
-            mdl.RowFields.CLASSIFICATION,
-            mdl.RowFields.MANUFACTURER,
-            mdl.RowFields.MFG_PART_NO,
-            mdl.RowFields.UL_VDE_NUMBER,
-            mdl.RowFields.VALIDATED_AT,
-            mdl.RowFields.QTY,
-            mdl.RowFields.DESIGNATOR,
-            mdl.RowFields.UNIT_PRICE,
-            mdl.RowFields.SUB_TOTAL,
+            TableLabelsV3.ITEM,
+            TableLabelsV3.COMPONENT_TYPE,
+            TableLabelsV3.DEVICE_PACKAGE,
+            TableLabelsV3.DESCRIPTION,
+            TableLabelsV3.UNITS,
+            TableLabelsV3.CLASSIFICATION,
+            TableLabelsV3.MFG_NAME,
+            TableLabelsV3.MFG_PART_NO,
+            TableLabelsV3.UL_VDE_NO,
+            TableLabelsV3.VALIDATED_AT,
+            TableLabelsV3.QUANTITY,
+            TableLabelsV3.DESIGNATORS,
+            TableLabelsV3.UNIT_PRICE,
+            TableLabelsV3.SUB_TOTAL,
         )
 
         for row, expected in zip(rows, expected_errors):
@@ -157,9 +162,9 @@ class TestCheckRowLogic(unittest.TestCase):
             # quantity is zero when item is blank.
             replace(bfx.ROW_A_1, item="", qty="2"),
             # designator is specified when quantity is an integer more than zero.
-            replace(bfx.ROW_A_1, qty="2", designator=""),
+            replace(bfx.ROW_A_1, qty="2", designators=""),
             # designator count equals quantity when quantity is a greater than zero integer
-            replace(bfx.ROW_A_1, qty="2", designator="R1"),
+            replace(bfx.ROW_A_1, qty="2", designators="R1"),
             # unit price is greater than zero when quantity is greater than zero.
             replace(bfx.ROW_A_1, qty="2", unit_price="0"),
             # sub-total is zero when quantity is zero.
@@ -168,12 +173,12 @@ class TestCheckRowLogic(unittest.TestCase):
             replace(bfx.ROW_A_1, qty="2", unit_price="0.1", sub_total="3")
         )
         expected_errors = (
-            mdl.RowFields.QTY,
-            mdl.RowFields.DESIGNATOR,
-            mdl.RowFields.DESIGNATOR,
-            mdl.RowFields.UNIT_PRICE,
-            mdl.RowFields.SUB_TOTAL,
-            mdl.RowFields.SUB_TOTAL
+            TableLabelsV3.QUANTITY,
+            TableLabelsV3.DESIGNATORS,
+            TableLabelsV3.DESIGNATORS,
+            TableLabelsV3.UNIT_PRICE,
+            TableLabelsV3.SUB_TOTAL,
+            TableLabelsV3.SUB_TOTAL
         )
 
         for row, expected in zip(rows, expected_errors):
@@ -226,22 +231,22 @@ class TestCheckHeaderValue(unittest.TestCase):
         headers = (
             replace(bfx.HEADER_A, model_no=vfx.MODEL_NO_BAD[0]),
             replace(bfx.HEADER_A, board_name=vfx.BOARD_NAME_BAD[0]),
-            replace(bfx.HEADER_A, manufacturer=vfx.BOARD_SUPPLIER_BAD[0]),
+            replace(bfx.HEADER_A, board_supplier=vfx.BOARD_SUPPLIER_BAD[0]),
             replace(bfx.HEADER_A, build_stage=vfx.BUILD_STAGE_BAD[0]),
-            replace(bfx.HEADER_A, date=vfx.BOM_DATE_BAD[0]),
+            replace(bfx.HEADER_A, bom_date=vfx.BOM_DATE_BAD[0]),
             replace(bfx.HEADER_A, material_cost=vfx.COST_BAD[0]),
             replace(bfx.HEADER_A, overhead_cost=vfx.COST_BAD[1]),
             replace(bfx.HEADER_A, total_cost=vfx.COST_BAD[2]),
         )
         expected_errors = (
-            mdl.HeaderFields.MODEL_NUMBER,
-            mdl.HeaderFields.BOARD_NAME,
-            mdl.HeaderFields.BOARD_SUPPLIER,
-            mdl.HeaderFields.BUILD_STAGE,
-            mdl.HeaderFields.BOM_DATE,
-            mdl.HeaderFields.MATERIAL_COST,
-            mdl.HeaderFields.OVERHEAD_COST,
-            mdl.HeaderFields.TOTAL_COST,
+            HeaderLabelsV3.MODEL_NO,
+            HeaderLabelsV3.BOARD_NAME,
+            HeaderLabelsV3.BOARD_SUPPLIER,
+            HeaderLabelsV3.BUILD_STAGE,
+            HeaderLabelsV3.BOM_DATE,
+            HeaderLabelsV3.MATERIAL_COST,
+            HeaderLabelsV3.OVERHEAD_COST,
+            HeaderLabelsV3.TOTAL_COST,
         )
 
         for header, expected in zip(headers, expected_errors):
@@ -314,8 +319,8 @@ class TestCheckHeaderLogic(unittest.TestCase):
             ),
         )
         expected_errors = [
-            mdl.HeaderFields.MATERIAL_COST,
-            mdl.HeaderFields.TOTAL_COST,
+            HeaderLabelsV3.MATERIAL_COST,
+            HeaderLabelsV3.TOTAL_COST,
         ]
 
         for board, expected in zip(bom.boards, expected_errors):
@@ -371,8 +376,8 @@ class TestCheckBom(unittest.TestCase):
             ),
         )
         expected_errors = [
-            mdl.HeaderFields.MATERIAL_COST,
-            mdl.HeaderFields.TOTAL_COST,
+            HeaderLabelsV3.MATERIAL_COST,
+            HeaderLabelsV3.TOTAL_COST,
         ]
 
         # ACT

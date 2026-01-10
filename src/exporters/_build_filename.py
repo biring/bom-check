@@ -43,7 +43,7 @@ FILE_NAME_SEPARATOR = "-"
 SUFFIX_CHECKER_LOG = 'CheckerLog'
 
 
-def _extract_board_name(bom: model.Bom) -> str | None:
+def _extract_board_name(bom: model.BomV3) -> str | None:
     """
     Extract the board name if the BOM contains exactly one board.
 
@@ -59,7 +59,7 @@ def _extract_board_name(bom: model.Bom) -> str | None:
         return bom.boards[0].header.board_name
 
 
-def _extract_build_stage(bom: model.Bom) -> str:
+def _extract_build_stage(bom: model.BomV3) -> str:
     """
     Extract the build stage from the first board header in a BOM.
 
@@ -80,7 +80,7 @@ def _extract_build_stage(bom: model.Bom) -> str:
     raise ValueError("Build stage not found in BOM headers")
 
 
-def _extract_model_number(bom: model.Bom) -> str:
+def _extract_model_number(bom: model.BomV3) -> str:
     """
     Extract the model number from the first board header in a BOM.
 
@@ -101,7 +101,7 @@ def _extract_model_number(bom: model.Bom) -> str:
     raise ValueError("Model number not found in BOM header")
 
 
-def build_checker_log_filename(bom: model.Bom) -> str:
+def build_checker_log_filename(bom: model.BomV3) -> str:
     """
     Build a standardized checker log filename from BOM header metadata.
 

@@ -27,7 +27,15 @@ import unittest
 from dataclasses import replace
 from unittest.mock import patch
 
-from src.models import interfaces as mdl
+from src.models.interfaces import (
+    BoardV3,
+    HeaderV3,
+)
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
 from src.lookups import interfaces as lookup  # for patch
 
 # noinspection PyProtectedMember
@@ -73,7 +81,7 @@ class TestComponentTypeLookup(unittest.TestCase):
         with self.subTest("Log", Out=log):
             self.assertIn(row.component_type, log)
             self.assertIn(expected_out, log)
-            self.assertIn(mdl.RowFields.COMPONENT, log)
+            self.assertIn(TableLabelsV3.COMPONENT_TYPE, log)
 
     def test_no_match_below_threshold(self):
         """
@@ -160,7 +168,7 @@ class TestComponentTypeLookup(unittest.TestCase):
         with self.subTest("Log", Out=log):
             self.assertIn(row.component_type, log)
             self.assertIn(expected, log)
-            self.assertIn(mdl.RowFields.COMPONENT, log)
+            self.assertIn(TableLabelsV3.COMPONENT_TYPE, log)
 
 
 class TestExpandDesignators(unittest.TestCase):
@@ -180,8 +188,8 @@ class TestExpandDesignators(unittest.TestCase):
             value_out, log = auto.expand_designators(row)
 
             # ASSERT
-            with self.subTest("Value Out", Out=value_out, Exp=row.designator):
-                self.assertEqual(row.designator, value_out)
+            with self.subTest("Value Out", Out=value_out, Exp=row.designators):
+                self.assertEqual(row.designators, value_out)
             with self.subTest("Log", Out=""):
                 self.assertEqual(log, "")
 
@@ -190,12 +198,12 @@ class TestExpandDesignators(unittest.TestCase):
         Should return expanded range designators and a non-empty change log when corrections are made.
         """
         # ARRANGE
-        field = mdl.RowFields.DESIGNATOR
+        field = TableLabelsV3.DESIGNATORS
         cases = (
-            (replace(bfx.ROW_A_1, designator="R1-R3"), "R1,R2,R3"),
-            (replace(bfx.ROW_A_1, designator="R1, R3-R6, R12, R45-R43"), "R1,R3,R4,R5,R6,R12,R45,R44,R43"),
-            (replace(bfx.ROW_A_1, designator="R1-R2, C10-C12"), "R1,R2,C10,C11,C12"),
-            (replace(bfx.ROW_A_3, designator="R5-R3"), "R5,R4,R3"),
+            (replace(bfx.ROW_A_1, designators="R1-R3"), "R1,R2,R3"),
+            (replace(bfx.ROW_A_1, designators="R1, R3-R6, R12, R45-R43"), "R1,R3,R4,R5,R6,R12,R45,R44,R43"),
+            (replace(bfx.ROW_A_1, designators="R1-R2, C10-C12"), "R1,R2,C10,C11,C12"),
+            (replace(bfx.ROW_A_3, designators="R5-R3"), "R5,R4,R3"),
         )
 
         for row, value_out in cases:
@@ -206,7 +214,7 @@ class TestExpandDesignators(unittest.TestCase):
             with self.subTest("Value Out", Out=out, Exp=value_out):
                 self.assertEqual(out, value_out)
             with self.subTest("Log", Out=log):
-                self.assertIn(row.designator, log, row.designator)
+                self.assertIn(row.designators, log, row.designators)
                 self.assertIn(value_out, log, value_out)
                 self.assertIn(field, log, field)
 
@@ -238,9 +246,9 @@ class TestMaterialCost(unittest.TestCase):
         Should return corrected material cost and a non-empty change log when corrections are made.
         """
         # ARRANGE
-        field = mdl.HeaderFields.MATERIAL_COST
-        header_bad_material: mdl.Header = replace(bfx.HEADER_A, material_cost="99")
-        board: mdl.Board = replace(bfx.BOARD_A, header=header_bad_material)
+        field = HeaderLabelsV3.MATERIAL_COST
+        header_bad_material: HeaderV3 = replace(bfx.HEADER_A, material_cost="99")
+        board: BoardV3 = replace(bfx.BOARD_A, header=header_bad_material)
         expected_value = bfx.BOARD_A.header.material_cost
 
         # ACT
@@ -318,7 +326,7 @@ class TestSubTotal(unittest.TestCase):
         Should return corrected sub-total and a non-empty change log when corrections are made.
         """
         # ARRANGE
-        field = mdl.RowFields.SUB_TOTAL
+        field = TableLabelsV3.SUB_TOTAL
         rows = (
             (replace(bfx.ROW_A_1, sub_total="1" + bfx.ROW_A_1.sub_total), bfx.ROW_A_1.sub_total),
             (replace(bfx.ROW_A_2, sub_total="1" + bfx.ROW_A_1.sub_total), bfx.ROW_A_2.sub_total),
@@ -394,7 +402,7 @@ class TestTotalCost(unittest.TestCase):
         Should return corrected total cost and a non-empty change log when corrections are made.
         """
         # ARRANGE
-        field = mdl.HeaderFields.TOTAL_COST
+        field = HeaderLabelsV3.TOTAL_COST
         headers = (
             (replace(bfx.HEADER_B1, total_cost="1" + bfx.HEADER_B1.total_cost), bfx.HEADER_B1.total_cost),
             (replace(bfx.HEADER_B2, total_cost="1" + bfx.HEADER_B2.total_cost), bfx.HEADER_B2.total_cost),

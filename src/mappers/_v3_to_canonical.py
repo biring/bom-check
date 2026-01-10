@@ -37,21 +37,21 @@ from src.models.interfaces import (
     CanonicalPart,
     CanonicalComponent,
 
-    Bom as V3Bom,
-    Board as V3Board,
-    Header as V3Header,
-    Row as V3Row,
+    BomV3,
+    BoardV3,
+    HeaderV3,
+    RowV3,
 )
 
 from . import _dependencies as dep
 
 
-def _group_rows_to_parts(rows: tuple[V3Row, ...]) -> tuple[CanonicalPart, ...]:
+def _group_rows_to_parts(rows: tuple[RowV3, ...]) -> tuple[CanonicalPart, ...]:
     """
     Group ordered version 3 rows into canonical parts.
 
     Args:
-        rows (tuple[V3Row, ...]): Ordered rows from a version 3 board.
+        rows (tuple[RowV3, ...]): Ordered rows from a version 3 board.
 
     Returns:
         tuple[CanonicalPart, ...]: Canonical parts built from grouped rows.
@@ -70,7 +70,7 @@ def _group_rows_to_parts(rows: tuple[V3Row, ...]) -> tuple[CanonicalPart, ...]:
             item_int = dep.parser.parse_to_integer(item_str)
             if item_int >= 1:
                 primary_row = row
-                alt_rows: list[V3Row] = []
+                alt_rows: list[RowV3] = []
 
                 j = i + 1
                 # Any following row whose item is NOT an integer is an alternate
@@ -89,12 +89,12 @@ def _group_rows_to_parts(rows: tuple[V3Row, ...]) -> tuple[CanonicalPart, ...]:
     return tuple(parts)
 
 
-def _map_board(raw_board: V3Board) -> CanonicalBoard:
+def _map_board(raw_board: BoardV3) -> CanonicalBoard:
     """
     Map a version 3 board into a canonical board.
 
     Args:
-        raw_board (V3Board): Verified version 3 board model.
+        raw_board (BoardV3): Verified version 3 board model.
 
     Returns:
         CanonicalBoard: Canonical board with mapped header and parts.
@@ -108,12 +108,12 @@ def _map_board(raw_board: V3Board) -> CanonicalBoard:
     )
 
 
-def _map_header(raw_header: V3Header) -> CanonicalHeader:
+def _map_header(raw_header: HeaderV3) -> CanonicalHeader:
     """
     Map a version 3 header model to a canonical header model.
 
     Args:
-        raw_header (V3Header): Verified version 3 header model.
+        raw_header (HeaderV3): Verified version 3 header model.
 
     Returns:
         CanonicalHeader: Canonical representation of the header.
@@ -121,23 +121,23 @@ def _map_header(raw_header: V3Header) -> CanonicalHeader:
     return CanonicalHeader(
         model_no=raw_header.model_no,
         board_name=raw_header.board_name,
-        manufacturer=raw_header.manufacturer,
+        manufacturer=raw_header.board_supplier,
         build_stage=raw_header.build_stage,
-        date=dep.parser.parse_to_datetime(raw_header.date),
+        date=dep.parser.parse_to_datetime(raw_header.bom_date),
         material_cost=dep.parser.parse_to_float(raw_header.material_cost),
         overhead_cost=dep.parser.parse_to_float(raw_header.overhead_cost),
         total_cost=dep.parser.parse_to_float(raw_header.total_cost),
     )
 
 
-def _map_row_to_component(row: V3Row) -> CanonicalComponent:
+def _map_row_to_component(row: RowV3) -> CanonicalComponent:
     """
     Map version 3 row model into a canonical component model.
 
     The row may represent either a primary or alternate component.
 
     Args:
-        row (V3Row): verified version 3 row.
+        row (RowV3): verified version 3 row.
 
     Returns:
         CanonicalComponent: canonical component built from row fields.
@@ -146,7 +146,7 @@ def _map_row_to_component(row: V3Row) -> CanonicalComponent:
         component_type=row.component_type.strip(),
         device_package=row.device_package.strip(),
         description=row.description.strip(),
-        manufacturer=row.manufacturer.strip(),
+        manufacturer=row.mfg_name.strip(),
         mfg_part_number=row.mfg_part_number.strip(),
         ul_vde_number=row.ul_vde_number.strip(),
         validated_at=tuple(row.validated_at.replace("/", ",").split(",")),
@@ -154,13 +154,13 @@ def _map_row_to_component(row: V3Row) -> CanonicalComponent:
     )
 
 
-def _map_rows_to_part(primary: V3Row, alternates: tuple[V3Row, ...]) -> CanonicalPart:
+def _map_rows_to_part(primary: RowV3, alternates: tuple[RowV3, ...]) -> CanonicalPart:
     """
     Map a canonical Part model from a primary version 3 row and its alternates.
 
     Args:
-        primary (V3Row): Primary version 3 row with a valid item number.
-        alternates (tuple[V3Row, ...]): Alternate rows associated with the primary.
+        primary (RowV3): Primary version 3 row with a valid item number.
+        alternates (tuple[RowV3, ...]): Alternate rows associated with the primary.
 
     Returns:
         CanonicalPart: canonical part with primary and alternate components.
@@ -170,10 +170,10 @@ def _map_rows_to_part(primary: V3Row, alternates: tuple[V3Row, ...]) -> Canonica
 
     return CanonicalPart(
         item=dep.parser.parse_to_integer(primary.item),
-        designators=tuple(primary.designator.split(",")),
+        designators=tuple(primary.designators.split(",")),
         # Designators are taken only from the primary row by domain assumption
         qty=dep.parser.parse_to_float(primary.qty),
-        unit=primary.unit.strip(),
+        unit=primary.units.strip(),
         classification=primary.classification.strip(),
         primary_component=primary_component,
         alternate_components=alt_components,
@@ -181,7 +181,7 @@ def _map_rows_to_part(primary: V3Row, alternates: tuple[V3Row, ...]) -> Canonica
     )
 
 
-def map_v3_to_canonical_bom(fixed_bom: V3Bom) -> CanonicalBom:
+def map_v3_to_canonical_bom(fixed_bom: BomV3) -> CanonicalBom:
     """
     Map a verified version 3 BOM into a canonical BOM.
 

@@ -28,6 +28,11 @@ License:
 
 import unittest
 from dataclasses import dataclass
+
+from src.schemas.interfaces import (
+    HeaderLabelsV3,
+    TableLabelsV3,
+)
 from src.models import interfaces as mdl
 from tests.fixtures import v3_value as vfx
 # noinspection PyProtectedMember
@@ -107,7 +112,7 @@ class TestItem(Assert):
     """
     Unit tests for `item` function.
     """
-    attr = mdl.RowFields.ITEM
+    attr = TableLabelsV3.ITEM
 
     def test_change(self):
         """
@@ -144,7 +149,7 @@ class TestComponentType(Assert):
     """
     Unit tests for `component_type` function.
     """
-    attr = mdl.RowFields.COMPONENT
+    attr = TableLabelsV3.COMPONENT_TYPE
 
     def test_change(self):
         """
@@ -181,7 +186,7 @@ class TestDevicePackage(Assert):
     """
     Unit tests for `device_package` function.
     """
-    attr = mdl.RowFields.PACKAGE
+    attr = TableLabelsV3.DEVICE_PACKAGE
 
     def test_change(self):
         """
@@ -219,7 +224,7 @@ class TestDescription(Assert):
     """
     Unit tests for `description` function.
     """
-    attr = mdl.RowFields.DESCRIPTION
+    attr = TableLabelsV3.DESCRIPTION
 
     def test_change(self):
         """
@@ -256,7 +261,7 @@ class TestUnits(Assert):
     """
     Unit tests for `units` function.
     """
-    attr = mdl.RowFields.UNITS
+    attr = TableLabelsV3.UNITS
 
     def test_change(self):
         """
@@ -293,7 +298,7 @@ class TestClassification(Assert):
     """
     Unit tests for `classification` function.
     """
-    attr = mdl.RowFields.CLASSIFICATION
+    attr = TableLabelsV3.CLASSIFICATION
 
     def test_change(self):
         """
@@ -330,7 +335,7 @@ class TestManufacturer(Assert):
     """
     Unit tests for `manufacturer` function.
     """
-    attr = mdl.RowFields.MANUFACTURER
+    attr = TableLabelsV3.MFG_NAME
 
     def test_change(self):
         """
@@ -368,7 +373,7 @@ class TestManufacturerPartNumber(Assert):
     """
     Unit tests for `manufacturer_part_number` function.
     """
-    attr = mdl.RowFields.MFG_PART_NO
+    attr = TableLabelsV3.MFG_PART_NO
 
     def test_change(self):
         """
@@ -405,7 +410,7 @@ class TestUlVdeNumber(Assert):
     """
     Unit tests for `ul_vde_number` function.
     """
-    attr = mdl.RowFields.UL_VDE_NUMBER
+    attr = TableLabelsV3.UL_VDE_NO
 
     def test_change(self):
         """
@@ -442,7 +447,7 @@ class TestValidationAt(Assert):
     """
     Unit tests for `validated_at` function.
     """
-    attr = mdl.RowFields.VALIDATED_AT
+    attr = TableLabelsV3.VALIDATED_AT
 
     def test_change(self):
         """
@@ -480,7 +485,7 @@ class TestQuantity(Assert):
     """
     Unit tests for `quantity` function.
     """
-    attr = mdl.RowFields.QTY
+    attr = TableLabelsV3.QUANTITY
 
     def test_change(self):
         """
@@ -517,7 +522,7 @@ class TestDesignator(Assert):
     """
     Unit tests for `designator` function.
     """
-    attr = mdl.RowFields.DESIGNATOR
+    attr = TableLabelsV3.DESIGNATORS
 
     def test_change(self):
         """
@@ -554,7 +559,7 @@ class TestUnitPrice(Assert):
     """
     Unit tests for `unit_price` function.
     """
-    attr = mdl.RowFields.UNIT_PRICE
+    attr = TableLabelsV3.UNIT_PRICE
 
     def test_change(self):
         """
@@ -590,7 +595,7 @@ class TestSubTotal(Assert):
     """
     Unit tests for `sub_total` function.
     """
-    attr = mdl.RowFields.SUB_TOTAL
+    attr = TableLabelsV3.SUB_TOTAL
 
     def test_change(self):
         """
