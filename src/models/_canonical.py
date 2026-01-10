@@ -1,30 +1,35 @@
 """
 Canonical data models for BOM processing.
 
-This module defines immutable, normalized dataclasses representing the final canonical form of BOM data after parsing, validation, and approval. These models serve as the strict data contract consumed by exporters and downstream systems.
+This module defines immutable, normalized data structures representing the final canonical form of bill of materials data after parsing, validation, and approval. These models act as a strict data contract consumed by exporters and downstream systems and assume that all structural, semantic, and cost validation has already been enforced upstream.
 
-The canonical layer assumes all structural, semantic, and cost validations have already been enforced upstream.
+Key responsibilities
+	- Represent approved bill of materials data in an immutable and normalized form
+	- Provide canonical structures for components, parts, boards, and complete bills of materials
+	- Serve as a stable data contract for downstream exporters and integrations
+	- Centralize refactor-safe attribute name constants for mapping and adapter layers
 
-Example Usage:
-    # Preferred usage via package interface:
-    # Not applicable; this module is internal.
+Example usage
+	Preferred usage via public package interface
+	Not applicable. This is an internal module and should be accessed via a façade when exposed.
 
-    # Direct module usage (acceptable in unit tests or internal scripts only):
-    from src.models import _canonical_models as cm
-    bom = cm.CanonicalBom(boards=(board,), is_cost_bom=True)
+	Direct module usage (acceptable in unit tests or internal scripts only)
+	from src.models import _canonical as canonical
+	bom = canonical.CanonicalBom(boards=(board,), is_cost_bom=True)
 
-Dependencies:
-    - Python >= 3.10
-    - Standard Library: dataclasses, datetime
+Dependencies
+	- Python 3.10
+	- Standard Library: dataclasses, datetime
 
-Notes:
-    - All models are frozen dataclasses to guarantee immutability and traceability.
-    - Canonical models must not perform parsing, coercion, or validation logic.
-    - Designed to be serialization-ready for exporters.
+Notes
+	- All data models are frozen to guarantee immutability and traceability
+	- No parsing, coercion, or validation logic is performed in this layer
+	- Intended to be serialization-ready for exporters and downstream consumers
 
-License:
-    - Internal Use Only
+License
+	Internal Use Only
 """
+
 __all__ = []  # Internal-only; canonical models are not part of the public API.
 
 from dataclasses import dataclass
@@ -59,10 +64,29 @@ class CanonicalComponent:
     unit_price: float
 
 
+class CanonicalComponentAttrNames:
+    """
+    Attribute name constants for CanonicalComponent-related fields.
+
+    These constants provide a refactor-safe contract for adapter or mapping modules that need to reference canonical field names without duplicating string literals.
+    """
+
+    COMPONENT_TYPE = "component_type"
+    DEVICE_PACKAGE = "device_package"
+    DESCRIPTION = "description"
+    MANUFACTURER = "manufacturer"
+    MFG_PART_NO = "mfg_part_number"
+    UL_VDE_NUMBER = "ul_vde_number"
+    VALIDATED_AT = "validated_at"
+    UNIT_PRICE = "unit_price"
+
+
 @dataclass(frozen=True)
 class CanonicalPart:
     """
     Canonical representation of a BOM line item with primary and alternate component options.
+
+    Source-to-canonical convention: The transformer maps the first component option to primary_component and remaining options to alternate_components.
 
     Args:
         item (int): BOM line item number.
@@ -71,7 +95,7 @@ class CanonicalPart:
         unit (str): Unit of measure (e.g., "pcs").
         classification (str): Classification code (e.g., "A", "B", "C").
         primary_component (CanonicalComponent): Selected primary component.
-        alternate_components (tuple[Component, ...]): Approved alternates.
+        alternate_components (tuple[CanonicalComponent, ...]): Approved alternates.
         sub_total (float): Extended cost in RMB (VAT included), typically qty * unit_price.
 
     Returns:
@@ -85,6 +109,23 @@ class CanonicalPart:
     primary_component: CanonicalComponent
     alternate_components: tuple[CanonicalComponent, ...]
     sub_total: float
+
+
+class CanonicalPartAttrNames:
+    """
+    Attribute name constants for CanonicalPart fields.
+
+    These constants provide a refactor-safe contract for adapter or mapping modules that need to reference canonical field names without duplicating string literals.
+    """
+
+    ITEM = "item"
+    DESIGNATORS = "designators"
+    QTY = "qty"
+    UNITS = "unit"
+    CLASSIFICATION = "classification"
+    PRIMARY_COMPONENT = "primary_component"
+    ALTERNATE_COMPONENTS = "alternate_components"
+    SUB_TOTAL = "sub_total"
 
 
 @dataclass(frozen=True)
@@ -115,6 +156,23 @@ class CanonicalHeader:
     total_cost: float
 
 
+class CanonicalHeaderAttrNames:
+    """
+    Attribute name constants for CanonicalHeader fields.
+
+    These constants provide a refactor-safe contract for adapter or mapping modules that need to reference canonical field names without duplicating string literals.
+    """
+
+    MODEL_NUMBER = "model_no"
+    BOARD_NAME = "board_name"
+    BOARD_SUPPLIER = "manufacturer"
+    BUILD_STAGE = "build_stage"
+    BOM_DATE = "date"
+    MATERIAL_COST = "material_cost"
+    OVERHEAD_COST = "overhead_cost"
+    TOTAL_COST = "total_cost"
+
+
 @dataclass(frozen=True)
 class CanonicalBoard:
     """
@@ -122,7 +180,7 @@ class CanonicalBoard:
 
     Args:
         header (CanonicalHeader): Board metadata.
-        parts (tuple[Part, ...]): BOM line items for the board.
+        parts (tuple[CanonicalPart, ...]): BOM line items for the board.
 
     Returns:
         None: Dataclass container.
@@ -137,7 +195,7 @@ class CanonicalBom:
     Canonical top-level model for a Version 3 BOM file.
 
     Args:
-        boards (tuple[Board, ...]): Parsed board BOMs extracted from the file.
+        boards (tuple[CanonicalBoard, ...]): Parsed board BOMs extracted from the file.
         is_cost_bom (bool): True when the BOM includes cost fields that are intended to be used; defaults to True.
 
     Returns:
