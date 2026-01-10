@@ -30,7 +30,6 @@ License
 	Internal Use Only
 """
 
-
 __all__ = []  # Explicitly prevents star-import from exposing any symbols; internal module only.
 
 
@@ -114,6 +113,8 @@ TABLE_TITLE_ROW_IDENTIFIERS_V3: list[str] = [
     TableLabelsV3.MFG_NAME,
     TableLabelsV3.MFG_PART_NO,
     TableLabelsV3.QUANTITY,
+    TableLabelsV3.COMPONENT_TYPE,  # Required to disambiguate the version 3 BOM table from earlier template versions.
+    TableLabelsV3.CLASSIFICATION,  # Required to disambiguate the version 3 BOM table from earlier template versions.
 ]
 
 # Minimum set of combined header and table labels required to detect a version 3 BOM template.
