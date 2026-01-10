@@ -43,20 +43,6 @@ from ._bom_v3 import (
 )
 
 # noinspection PyProtectedMember
-from ._v3_fields import (
-    HeaderFields,
-    RowFields,
-)
-
-# noinspection PyProtectedMember
-from ._v3_raw import (
-    Board,
-    Bom,
-    Header,
-    Row,
-)
-
-# noinspection PyProtectedMember
 from ._canonical import (
     CanonicalBoard,
     CanonicalBom,
@@ -73,15 +59,9 @@ __all__ = [
     "HeaderV3AttrNames",
     "RowV3",
     "RowV3AttrNames",
-    "HeaderFields",
-    "RowFields",
     "CanonicalBoard",
     "CanonicalBom",
     "CanonicalComponent",
     "CanonicalHeader",
     "CanonicalPart",
-    "Board",
-    "Bom",
-    "Header",
-    "Row",
 ]
