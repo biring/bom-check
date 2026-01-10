@@ -1,12 +1,12 @@
 """
 Public interface façade for the models package.
 
-This module defines the stable, supported API surface for model objects used throughout the application. It re-exports selected data models and field definitions from internal implementations so that external callers can depend on a consistent interface while allowing internal structure to evolve without breaking consumers.
+This module defines the stable, supported API surface for model objects used throughout the application. It re-exports selected model types and attribute name enumerations from internal implementations so external callers can rely on a consistent interface while allowing internal structure and versioning to evolve without breaking consumers.
 
 Key responsibilities
-	- Expose versioned and canonical bill of materials models for external use.
-	- Provide schema-related field enumerations for header and row data.
-	- Act as a boundary layer that prevents direct dependency on internal model modules.
+	- Expose canonical and versioned bill of materials data models for external use.
+	- Provide enumerations that define allowed attribute names for headers, rows, components, and parts.
+	- Act as a boundary layer that prevents direct dependency on internal model implementation modules.
 
 Example usage
 	# Preferred usage via public package interface:
@@ -47,8 +47,11 @@ from ._canonical import (
     CanonicalBoard,
     CanonicalBom,
     CanonicalComponent,
+    CanonicalComponentAttrNames,
     CanonicalHeader,
+    CanonicalHeaderAttrNames,
     CanonicalPart,
+    CanonicalPartAttrNames,
 )
 
 # Public API surface for this package
@@ -62,6 +65,9 @@ __all__ = [
     "CanonicalBoard",
     "CanonicalBom",
     "CanonicalComponent",
+    "CanonicalComponentAttrNames",
     "CanonicalHeader",
+    "CanonicalHeaderAttrNames",
     "CanonicalPart",
+    "CanonicalPartAttrNames",
 ]
