@@ -1,7 +1,7 @@
 """
 Public interface façade for the adapters package.
 
-This module exposes the approved, stable import API for callers by re-exporting supported adapter-layer transformations implemented in internal modules. It provides a consistent import location so internal module structure may evolve without breaking external imports.
+This module defines the stable, supported import surface for adapter-layer transformations by re-exporting approved mapping capabilities from internal implementation modules. It exists to decouple callers from the internal module layout while providing a consistent and explicit API for schema adaptation workflows.
 
 Key responsibilities
 	- Provide a stable public import surface for adapter-layer transformations.
@@ -33,12 +33,20 @@ License
 # Re-export approved API functions from internal modules
 
 # noinspection PyProtectedMember
+from ._canonical_to_template_v3 import (
+    map_canonical_to_template_v3_header,
+    map_canonical_to_template_v3_table,
+)
+
+# noinspection PyProtectedMember
 from ._template_v3_to_bom_v3 import (
     map_template_v3_header_to_bom_v3_header,
     map_template_v3_table_to_bom_v3_row,
 )
 
 __all__ = [
+    "map_canonical_to_template_v3_header",
+    "map_canonical_to_template_v3_table",
     "map_template_v3_header_to_bom_v3_header",
     "map_template_v3_table_to_bom_v3_row",
 ]

@@ -1,33 +1,35 @@
 """
 Unit tests validating the public adapter interface for version 3 header and table mappings.
 
-This module provides focused verification that the adapter façade correctly delegates mapping calls and returns populated model objects when supplied with valid label-to-value mappings for version 3 templates. The tests exercise only the observable interface behavior and type of the returned results, without asserting on internal transformation details.
+This module verifies that the adapter façade exposes callable mapping functions for version 3 templates and that these functions return objects of the expected type when provided with valid, known-good input mappings. The tests focus exclusively on observable interface behavior and returned result types, without asserting on internal transformation logic or field-level correctness.
 
 Test scope
-	- Validation that header mapping via the adapter interface returns an instance of the expected header model.
-	- Validation that table mapping via the adapter interface returns an instance of the expected row model.
-	- Coverage of happy-path inputs using known-good fixture values.
+	- Validation that canonical-to-template header mapping returns a dictionary.
+	- Validation that canonical-to-template table mapping returns a dictionary.
+	- Validation that template-to-BOM header mapping returns a populated header model instance.
+	- Validation that template-to-BOM table mapping returns a populated row model instance.
+	- Coverage of happy-path inputs using known-good fixture values only.
 
 Execution
 	Preferred execution via project-root invocation
-		python -m unittest tests\adapters\test_interfaces.py
+	python -m unittest tests\adapters\test_interfaces.py
 
 	Test discovery (runs broader suite)
-		python -m unittest discover
+	python -m unittest discover
 
 Test data and fixtures
-	- Input data constructed as in-memory dictionaries keyed by version 3 label enums.
-	- Known-good scalar values sourced from shared test fixtures.
-	- No filesystem resources, temporary directories, or explicit cleanup steps are used.
+	- Input values provided as in-memory dictionaries keyed by canonical or template label enums.
+	- Scalar test values sourced from shared version 3 fixture constants.
+	- No filesystem usage, temporary directories, or explicit cleanup logic.
 
 Dependencies
 	- Python 3.x
 	- Standard Library: unittest
 
 Notes
-	- Tests assert only on the returned object type, not on field-level content or value correctness.
-	- Behavior is deterministic given static fixture inputs and absence of external side effects.
-	- The adapter and model implementations are treated as external dependencies and are not inspected directly.
+	- Assertions are limited to verifying return types rather than validating mapped content.
+	- Tests are deterministic due to static fixture inputs and lack of external side effects.
+	- Adapter functions and model classes are treated as external dependencies and are not inspected internally.
 
 License
 	Internal Use Only
@@ -41,6 +43,9 @@ from src.schemas.interfaces import (
 )
 
 from src.models.interfaces import (
+    CanonicalHeaderAttrNames,
+    CanonicalComponentAttrNames,
+    CanonicalPartAttrNames,
     HeaderV3,
     RowV3,
 )
@@ -50,14 +55,66 @@ from src.adapters import interfaces as adapters
 from tests.fixtures import v3_value as vfx
 
 
-class TestAdaptersInterfaces(unittest.TestCase):
+class TestInterfaces(unittest.TestCase):
     """
-    Unit tests for the public adapters.interfaces façade module.
+    Unit tests to verify the adapter public interface façade.
     """
 
-    def test_header_mapping_delegates_correctly(self):
+    def test_map_canonical_to_template_v3_header(self):
         """
-        Calling the header mapping via the interface returns a populated HeaderV3 instance.
+        Should return a dict when the canonical-to-template header mapping is invoked via the public interface.
+        """
+        # ARRANGE
+        values = {
+            CanonicalHeaderAttrNames.MODEL_NUMBER: vfx.MODEL_NO_GOOD[0],
+            CanonicalHeaderAttrNames.BOARD_NAME: vfx.BOARD_NAME_GOOD[0],
+            CanonicalHeaderAttrNames.BOARD_SUPPLIER: vfx.BOARD_SUPPLIER_GOOD[0],
+            CanonicalHeaderAttrNames.BUILD_STAGE: vfx.BUILD_STAGE_GOOD[0],
+            CanonicalHeaderAttrNames.BOM_DATE: vfx.BOM_DATE_GOOD[0],
+            CanonicalHeaderAttrNames.MATERIAL_COST: vfx.PRICE_GOOD[0],
+            CanonicalHeaderAttrNames.OVERHEAD_COST: vfx.PRICE_GOOD[0],
+            CanonicalHeaderAttrNames.TOTAL_COST: vfx.PRICE_GOOD[0],
+        }
+
+        # ACT
+        actual = adapters.map_canonical_to_template_v3_header(values)
+
+        # ASSERT
+        with self.subTest(Act=type(actual).__name__, Exp=dict.__name__):
+            self.assertIsInstance(actual, dict)
+
+    def test_map_canonical_to_template_v3_table(self):
+        """
+        Should return a dict when the canonical-to-template table mapping is invoked via the public interface.
+        """
+        # ARRANGE
+        values = {
+            CanonicalPartAttrNames.ITEM: vfx.ITEM_GOOD[0],
+            CanonicalComponentAttrNames.COMPONENT_TYPE: vfx.COMP_TYPE_GOOD[0],
+            CanonicalComponentAttrNames.DEVICE_PACKAGE: vfx.DEVICE_PACKAGE_GOOD[0],
+            CanonicalComponentAttrNames.DESCRIPTION: vfx.DESCRIPTION_GOOD[0],
+            CanonicalPartAttrNames.UNITS: vfx.UNITS_GOOD[0],
+            CanonicalPartAttrNames.CLASSIFICATION: vfx.CLASSIFICATION_GOOD[0],
+            CanonicalComponentAttrNames.MANUFACTURER: vfx.MFG_NAME_GOOD[0],
+            CanonicalComponentAttrNames.MFG_PART_NO: vfx.MFG_PART_NO_GOOD[0],
+            CanonicalComponentAttrNames.UL_VDE_NUMBER: vfx.UL_VDE_NO_GOOD[0],
+            CanonicalComponentAttrNames.VALIDATED_AT: vfx.VALIDATED_AT_GOOD[0],
+            CanonicalPartAttrNames.QTY: vfx.QUANTITY_GOOD[0],
+            CanonicalPartAttrNames.DESIGNATORS: vfx.DESIGNATOR_GOOD[0],
+            CanonicalComponentAttrNames.UNIT_PRICE: vfx.PRICE_GOOD[0],
+            CanonicalPartAttrNames.SUB_TOTAL: vfx.PRICE_GOOD[0],
+        }
+
+        # ACT
+        actual = adapters.map_canonical_to_template_v3_table(values)
+
+        # ASSERT
+        with self.subTest(Act=type(actual).__name__, Exp=dict.__name__):
+            self.assertIsInstance(actual, dict)
+
+    def test_map_template_v3_header_to_bom_v3_header(self):
+        """
+        Should return a HeaderV3 instance when the template-to-BOM header mapping is invoked via the public interface.
         """
         # ARRANGE
         values = {
@@ -78,9 +135,9 @@ class TestAdaptersInterfaces(unittest.TestCase):
         with self.subTest(Act=type(actual).__name__, Exp=HeaderV3.__name__):
             self.assertIsInstance(actual, HeaderV3)
 
-    def test_table_mapping_delegates_correctly(self):
+    def test_map_template_v3_table_to_bom_v3_row(self):
         """
-        Calling the table mapping via the interface returns a populated RowV3 instance.
+        Should return a RowV3 instance when the template-to-BOM table mapping is invoked via the public interface.
         """
         # ARRANGE
         values = {
