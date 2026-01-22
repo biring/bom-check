@@ -81,6 +81,28 @@ class Reference:
 # Module varaible with reference time
 reference = Reference()
 
+
+class TestFormatDateIso(unittest.TestCase):
+    """
+    Unit tests to verify formatting of datetime values as ISO date strings.
+    """
+
+    def test_happy_path(self):
+        """
+        Should return the date portion of the datetime in 'YYYY-MM-DD' format.
+        """
+        # ARRANGE
+        value = datetime(2024, 3, 15, 10, 45, 30)
+        expected = "2024-03-15"
+
+        # ACT
+        result = timestamp.format_date_iso(value)
+
+        # ASSERT
+        with self.subTest(Act=result, Exp=expected):
+            self.assertEqual(result, expected)
+
+
 class TestNowLocalDate(unittest.TestCase):
     """
     Unit tests for the `now_local_date` function.

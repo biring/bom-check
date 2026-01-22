@@ -24,12 +24,26 @@ License:
 """
 
 __all__ = [
+    "format_date_iso",
     "now_local_date",
     "now_local_time",
     "now_utc_iso",
 ]
 
 from datetime import datetime, timezone
+
+
+def format_date_iso(value: datetime) -> str:
+    """
+    Format a datetime as an ISO 8601 date string (YYYY-MM-DD).
+
+    Args:
+        value (datetime): Datetime value to format.
+
+    Returns:
+        str: Date formatted as 'YYYY-MM-DD'.
+    """
+    return value.date().isoformat()
 
 
 def now_local_date() -> str:
