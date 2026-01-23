@@ -33,7 +33,7 @@ import unittest
 import pandas as pd
 
 # noinspection PyProtectedMember
-from src.helpers.dataframes._df_base import DataFrameBase  # module under test
+from src.helpers.dataframes._df_base import _DataFrameBase  # module under test
 
 
 class TestDataFrameBase(unittest.TestCase):
@@ -49,7 +49,7 @@ class TestDataFrameBase(unittest.TestCase):
         df = pd.DataFrame([[1, 2]])
 
         # ACT
-        base = DataFrameBase(df)
+        base = _DataFrameBase(df)
 
         # ASSERT
         with self.subTest("dataframe_identity", Act=base.df, Exp=df):
@@ -65,7 +65,7 @@ class TestDataFrameBase(unittest.TestCase):
 
         # ACT
         with self.assertRaises(TypeError) as ctx:
-            DataFrameBase(invalid_df)  # type: ignore[arg-type]
+            _DataFrameBase(invalid_df)  # type: ignore[arg-type]
         actual_exc = type(ctx.exception).__name__
 
         # ASSERT
@@ -81,7 +81,7 @@ class TestDataFrameBase(unittest.TestCase):
         expected = "modelnumber"
 
         # ACT
-        actual = DataFrameBase.normalize(value)
+        actual = _DataFrameBase.normalize(value)
 
         # ASSERT
         with self.subTest(Act=actual, Exp=expected):
@@ -102,7 +102,7 @@ class TestDataFrameBase(unittest.TestCase):
         for case_name, value, expected in cases:
             with self.subTest("case_name", case_name=case_name):
                 # ACT
-                actual = DataFrameBase.normalize(value)
+                actual = _DataFrameBase.normalize(value)
 
                 # ASSERT
                 with self.subTest(Act=actual, Exp=expected):
@@ -114,7 +114,7 @@ class TestDataFrameBase(unittest.TestCase):
         """
         # ARRANGE
         df = pd.DataFrame([["  hello  "]])
-        base = DataFrameBase(df)
+        base = _DataFrameBase(df)
         expected = "hello"
 
         # ACT
@@ -130,7 +130,7 @@ class TestDataFrameBase(unittest.TestCase):
         """
         # ARRANGE
         df = pd.DataFrame([[None]])
-        base = DataFrameBase(df)
+        base = _DataFrameBase(df)
 
         # ACT
         actual = base.get_cell_str_value(0, 0)
@@ -145,7 +145,7 @@ class TestDataFrameBase(unittest.TestCase):
         """
         # ARRANGE
         df = pd.DataFrame([[1]])
-        base = DataFrameBase(df)
+        base = _DataFrameBase(df)
         expected_exc = IndexError.__name__
 
         # ACT
@@ -163,7 +163,7 @@ class TestDataFrameBase(unittest.TestCase):
         """
         # ARRANGE
         df = pd.DataFrame([["a"]])
-        base = DataFrameBase(df)
+        base = _DataFrameBase(df)
         value = "b"
 
         # ACT
@@ -179,7 +179,7 @@ class TestDataFrameBase(unittest.TestCase):
         """
         # ARRANGE
         df = pd.DataFrame([[1]])
-        base = DataFrameBase(df)
+        base = _DataFrameBase(df)
         expected_exc = IndexError.__name__
 
         # ACT

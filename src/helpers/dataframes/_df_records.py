@@ -45,11 +45,11 @@ from typing import Any
 
 import pandas as pd
 
-from ._df_base import DataFrameBase
+from ._df_base import _DataFrameBase
 
 
 @dataclass(frozen=True, slots=True)
-class RecordSchema:
+class _RecordSchema:
     """
     Capture resolved schema information for row-oriented record access.
 
@@ -66,7 +66,7 @@ class RecordSchema:
     titles_original: list[str]
 
 
-class Record(DataFrameBase):
+class Record(_DataFrameBase):
     """
     Provide row-oriented record read and write access over a pandas DataFrame.
 
@@ -83,7 +83,7 @@ class Record(DataFrameBase):
     Attributes:
         df (pd.DataFrame): Backing DataFrame inherited from DataFrameBase.
         title_identifiers (tuple[str, ...]): Required titles used to locate the title row.
-        _schema (RecordSchema): Resolved schema derived from the title row.
+        _schema (_RecordSchema): Resolved schema derived from the title row.
         _record_count (int | None): Cached count of readable records after reset_read().
         _last_filled_df_row (int | None): Cached last filled DataFrame row for record data.
     """
@@ -105,14 +105,14 @@ class Record(DataFrameBase):
             raise ValueError("title identifiers must be a non-empty tuple")
 
         # Bypass cooperative MRO to avoid unintended Metadata initialization.
-        DataFrameBase.__init__(self, df)
+        _DataFrameBase.__init__(self, df)
 
         # Persist identifiers exactly as provided; normalization is applied only during lookup.
         self.title_identifiers: tuple[str, ...] = title_identifiers
 
         # Resolve the title row and construct a schema snapshot immediately.
         title_row = self._find_title_row_from_identifiers(self.title_identifiers)
-        self._schema: RecordSchema = self._build_schema_from_title_row(title_row)
+        self._schema: _RecordSchema = self._build_schema_from_title_row(title_row)
 
         # Initialize caches used to enforce deterministic bounds after reads and writes.
         self._record_count: int | None = None
@@ -311,7 +311,7 @@ class Record(DataFrameBase):
             f"Best candidate row index={best_row}, missing identifiers={missing_original}"
         )
 
-    def _build_schema_from_title_row(self, title_row: int) -> RecordSchema:
+    def _build_schema_from_title_row(self, title_row: int) -> _RecordSchema:
         """
         Construct a RecordSchema from the resolved title row.
 
@@ -319,7 +319,7 @@ class Record(DataFrameBase):
             title_row (int): DataFrame row index containing the titles.
 
         Returns:
-            RecordSchema: Immutable schema describing column mappings.
+            _RecordSchema: Immutable schema describing column mappings.
         """
         title_to_col: dict[str, int] = {}
         titles_original: list[str] = []
@@ -333,7 +333,7 @@ class Record(DataFrameBase):
             # First occurrence wins to ensure deterministic resolution.
             title_to_col.setdefault(self.normalize(label), col_idx)
 
-        return RecordSchema(
+        return _RecordSchema(
             title_row=title_row,
             title_to_col=title_to_col,
             titles_original=titles_original,

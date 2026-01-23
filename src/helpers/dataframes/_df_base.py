@@ -13,16 +13,17 @@ Example usage
 	# Not applicable. This is an internal module and should be accessed via a façade when exposed.
 
 	# Direct module usage (acceptable in unit tests or internal scripts only)
-	from src.helpers.dataframes._df_base import DataFrameBase
-	df = pd.DataFrame([["A", "B"]])
-	base = DataFrameBase(df)
-	value = base.get_cell_str_value(0, 0)
+	from src.helpers.dataframes._df_base import _DataFrameBase
+    df = pd.DataFrame([["A", "B"]])
+    base = _DataFrameBase(df)
+    value = base.get_cell_str_value(0, 0)
 
 Dependencies
 	- Python 3.x
 	- Standard Library: typing
 
 Notes
+	- This class is internal and intended for use by higher-level helpers or tests only.
 	- This module intentionally avoids any notion of rows, records, schemas, or implicit resizing.
 	- All bounds enforcement is explicit and raises immediately on invalid access.
 	- Normalization behavior is centralized here to ensure consistent label comparison across the codebase.
@@ -40,7 +41,7 @@ import pandas as pd
 from src.utils import sanitizer
 
 
-class DataFrameBase:
+class _DataFrameBase:
     """
     Shared, low-level DataFrame utilities.
 

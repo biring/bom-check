@@ -36,10 +36,10 @@ from __future__ import annotations
 
 import pandas as pd
 
-from ._df_base import DataFrameBase
+from ._df_base import _DataFrameBase
 
 
-class Metadata(DataFrameBase):
+class Metadata(_DataFrameBase):
     """
     Enforce and interact with a metadata-oriented DataFrame template.
 
@@ -78,7 +78,7 @@ class Metadata(DataFrameBase):
 
         # Intentionally bypass super() to avoid incompatible initialization
         # paths in subclasses that may assume record-oriented semantics
-        DataFrameBase.__init__(self, df)
+        _DataFrameBase.__init__(self, df)
 
         # Preserve the original identifiers exactly as provided so downstream
         # error messages reflect user-facing terminology
