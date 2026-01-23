@@ -108,17 +108,17 @@ class TableLabelsV3:
 TEMPLATE_VERSION_V3: str = "3"
 
 # Minimum set of table header labels required to uniquely identify a version 3 BOM table title row.
-TABLE_TITLE_ROW_IDENTIFIERS_V3: list[str] = [
+TABLE_TITLE_ROW_IDENTIFIERS_V3: tuple[str, ...] = (
     TableLabelsV3.DESIGNATORS,
     TableLabelsV3.MFG_NAME,
     TableLabelsV3.MFG_PART_NO,
     TableLabelsV3.QUANTITY,
     TableLabelsV3.COMPONENT_TYPE,  # Required to disambiguate the version 3 BOM table from earlier template versions.
     TableLabelsV3.CLASSIFICATION,  # Required to disambiguate the version 3 BOM table from earlier template versions.
-]
+)
 
 # Minimum set of combined header and table labels required to detect a version 3 BOM template.
-TEMPLATE_IDENTIFIERS_V3: list[str] = [
+TEMPLATE_IDENTIFIERS_V3: tuple[str, ...] = (
     HeaderLabelsV3.MODEL_NO,
     HeaderLabelsV3.BUILD_STAGE,
     TableLabelsV3.COMPONENT_TYPE,
@@ -128,4 +128,4 @@ TEMPLATE_IDENTIFIERS_V3: list[str] = [
     TableLabelsV3.MFG_PART_NO,
     TableLabelsV3.DEVICE_PACKAGE,
     TableLabelsV3.QUANTITY,
-]
+)

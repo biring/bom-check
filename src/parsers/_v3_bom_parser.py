@@ -110,7 +110,7 @@ def _is_v3_board_sheet(sheet_name: str, sheet_data: pd.DataFrame) -> bool:
         bool: True if all required identifiers are found, False otherwise.
     """
     # Check for all required identifiers in a single row to qualify as a Version 3 board BOM
-    if common.has_all_identifiers_in_single_row(sheet_name, sheet_data, tuple(TABLE_TITLE_ROW_IDENTIFIERS_V3)):
+    if common.has_all_identifiers_in_single_row(sheet_name, sheet_data, TABLE_TITLE_ROW_IDENTIFIERS_V3):
         # TODO: logger.info(f"✅ Sheet '{name}' is version 3 board BOM.")
         # when match found, exit
         return True
@@ -137,12 +137,12 @@ def _parse_board_sheet(sheet_name: str, sheet_data: pd.DataFrame) -> BoardV3:
         BoardV3: A structured Board object containing parsed header and component rows.
     """
     # Extract board-level metadata block from the top of the sheet
-    header_block = common.extract_header_block(sheet_data, tuple(TEMPLATE_IDENTIFIERS_V3))
+    header_block = common.extract_header_block(sheet_data, TEMPLATE_IDENTIFIERS_V3)
     # Parse and assign header metadata
     header = _parse_board_header(header_block)
 
     # Extract the BOM component table from the lower part of the sheet
-    table_block = common.extract_table_block(sheet_data, tuple(TABLE_TITLE_ROW_IDENTIFIERS_V3))
+    table_block = common.extract_table_block(sheet_data, TABLE_TITLE_ROW_IDENTIFIERS_V3)
     # Parse and assign the BOM rows
     rows = _parse_board_table(table_block)
 
@@ -246,7 +246,7 @@ def is_v3_bom(sheets: dict[str, pd.DataFrame]) -> bool:
     # Iterate through all sheets and check for required identifiers
     for sheet_name, sheet_data in sheets.items():
         # If it contains the labels that identify it as version 3 template
-        if common.has_all_identifiers_in_single_row(sheet_name, sheet_data, tuple(TABLE_TITLE_ROW_IDENTIFIERS_V3)):
+        if common.has_all_identifiers_in_single_row(sheet_name, sheet_data, TABLE_TITLE_ROW_IDENTIFIERS_V3):
             # TODO: logger.info(f"✅ Sheet '{name}' is using version 3 BOM template.")
             # TODO: logger.info(f"✅ BOM is using version 3 template.")
             # Return True on first match
