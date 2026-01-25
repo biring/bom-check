@@ -225,15 +225,14 @@ class TestLoadVersion3BomTemplate(unittest.TestCase):
         # ARRANGE
         # Create a realistic, non-empty template worksheet.
         template_df = pd.DataFrame(
-            {
-                "Item": [1, 2],
-                "Part Number": ["PN-1001", "PN-1002"],
-                "Description": ["Resistor 10k", "Capacitor 1uF"],
-                "Qty": [10, 5],
-            }
+            [
+                ["Item", "Part Number", "Description", "Qty"],
+                [1, "PN-1001", "Resistor 10k", 10],
+                [2, "PN-1002", "Capacitor 1uF", 5],
+            ]
         )
         with pd.ExcelWriter(self.template_path, engine="openpyxl") as writer:
-            template_df.to_excel(writer, sheet_name="Template", index=False)
+            template_df.to_excel(writer, sheet_name="Template", index=False, header=False)
 
         # Patch project-root resolution so the function finds our temp template.
         with patch.object(excel_file.folder_path, "resolve_project_folder", return_value=self.temp_root):

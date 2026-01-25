@@ -44,7 +44,7 @@ TEMPLATE_FOLDER_PARTS = ("src", "resources", "templates")
 TEMPLATE_NAME = "BomTemplateV3"
 
 
-def read_excel_as_dict(folder: str, file_name: str) -> dict[str, pd.DataFrame]:
+def read_excel_as_dict(folder: str, file_name: str, *, top_row_is_header: bool = True) -> dict[str, pd.DataFrame]:
     """
     Read an Excel workbook from disk and return all sheets as a dict of DataFrames.
 
@@ -53,6 +53,7 @@ def read_excel_as_dict(folder: str, file_name: str) -> dict[str, pd.DataFrame]:
     Args:
         folder (str): Path to the folder containing the Excel workbook.
         file_name (str): Name of the Excel workbook.
+        top_row_is_header (bool): If True, the top row is treated as column headers. If False, the top row is treated as data.
 
     Returns:
         dict[str, pd.DataFrame]: Mapping of sheet name to loaded DataFrame.
@@ -73,7 +74,7 @@ def read_excel_as_dict(folder: str, file_name: str) -> dict[str, pd.DataFrame]:
         file_path.assert_file_path(normalized_path)
 
         # Delegate the actual read to the shared excel_io helper
-        return excel_io.read_excel_file(normalized_path)
+        return excel_io.read_excel_file(normalized_path, top_row_is_header=top_row_is_header)
 
     except (TypeError, ValueError, RuntimeError) as e:
         raise RuntimeError(
@@ -108,7 +109,7 @@ def load_version3_bom_template() -> pd.DataFrame:
         template_folder_path = folder_path.construct_folder_path(project_root_path, TEMPLATE_FOLDER_PARTS)
 
         # Load workbook (expected to contain exactly one sheet)
-        template_dict = read_excel_as_dict(template_folder_path, template_file_name)
+        template_dict = read_excel_as_dict(template_folder_path, template_file_name, top_row_is_header=False)
 
         if len(template_dict) != 1:
             raise RuntimeError(
