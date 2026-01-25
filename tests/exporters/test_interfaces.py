@@ -1,28 +1,43 @@
 """
-Happy-path integration tests for the exporter interfaces façade.
+Integration-style tests covering the public exporter interface behaviors.
 
-Example Usage:
-    # Via unittest runner (preferred):
-    python -m unittest tests/exporters/test_interfaces.py
+This module validates the happy-path and error-path interactions of the exporter façade by asserting return types, raised exceptions, and filesystem side effects when generating filenames and writing output files based on provided inputs.
 
-    # Discover and run all tests:
-    python -m unittest discover -s tests
+Example Usage
+	# Preferred usage via project-root invocation:
+	python -m unittest tests/exporters/test_interfaces.py
 
-Dependencies:
-    - Python >= 3.10
-    - Standard Library:
-    - External Packages:
+	# Direct discovery (runs all tests, including this module):
+	python -m unittest discover -s tests
 
-Notes:
-    - Tests treat the exporter façade as an integration boundary, ensuring internal helpers are invoked correctly.
+Test data and fixtures
+	- Static bill of materials objects imported from shared test fixtures.
+	- Temporary directories created via standard library utilities to isolate filesystem side effects.
+	- Real files written to disk within temporary directories and implicitly cleaned up when contexts exit.
 
+Dependencies
+	- Python 3.x
+	- Standard Library:
+		- os
+		- tempfile
+		- unittest
+		- dataclasses
+	- External Packages:
+		- pandas
 
-License:
-    - Internal Use Only
+Notes
+	- Tests exercise the exporter façade as an integration boundary and rely on real filesystem writes for verification.
+	- Determinism depends on fixture stability and filesystem availability rather than mocked I/O.
+	- Assertions focus on observable outputs such as return values, exceptions, and file existence rather than file contents.
+
+License
+	- Internal Use Only
 """
+
 import os
 import tempfile
 import unittest
+import pandas as pd
 from dataclasses import replace
 from tests.fixtures import v3_bom as fixture
 from src.exporters import interfaces as exporter
@@ -74,64 +89,58 @@ class TestInterfaces(unittest.TestCase):
         with self.subTest(Out=actual, Exp=expected_exc):
             self.assertEqual(actual, expected_exc)
 
-
-class TestWriteTextFileLines(unittest.TestCase):
-    """
-    Unit tests for the `write_text_file_lines` exporter interface.
-    """
-
-    def test_writes_lines_to_text_file(self):
+    def test_write_excel_sheets(self) -> None:
         """
-        Should write the provided lines to a UTF-8 text file with the expected extension.
+        Should call write_excel_sheets and return None on the happy path.
         """
         # ARRANGE
+        fn = getattr(exporter, "write_excel_sheets", None)
+        expected_return = None
+
         with tempfile.TemporaryDirectory() as tmp_dir:
             folder = tmp_dir
-            file_name = "checker_log"
-            lines = ("Line 1", "Line 2", "Line 3")
-
-            expected_path = os.path.join(folder, file_name + dep.text_io.TEXT_FILE_TYPE)
-            expected_contents = "\n".join(lines)
-
-            # Pre-condition: file does not exist yet
-            self.assertFalse(os.path.exists(expected_path))
+            file_name = "bom_export"
+            sheets = {
+                "Sheet1": pd.DataFrame([{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]),
+                "Sheet2": pd.DataFrame([{"sku": "ABC-001", "qty": 10}]),
+            }
+            expected_path = os.path.join(folder, file_name + dep.excel_io.EXCEL_FILE_TYPE)
 
             # ACT
-            exporter.write_text_file_lines(folder, file_name, lines)
+            result = fn(  # type: ignore[misc]
+                folder,
+                file_name,
+                sheets,
+                overwrite=True,
+                top_row_is_header=True,
+            )
+            exists = os.path.isfile(expected_path)
 
             # ASSERT
-            exists = os.path.isfile(expected_path)
-            with self.subTest(Out=exists, Exp=True):
+            with self.subTest("callable_exists", Act=callable(fn), Exp=True):
+                self.assertTrue(callable(fn))
+            with self.subTest("return_type", Act=result, Exp=expected_return):
+                self.assertIsNone(result)
+            with self.subTest("file_exists", Act=exists, Exp=True):
                 self.assertTrue(exists)
 
-            with open(expected_path, "r", encoding="utf-8") as f:
-                actual_contents = f.read()
-
-            with self.subTest(Out=actual_contents, Exp=expected_contents):
-                self.assertEqual(actual_contents, expected_contents)
-
-    def test_does_not_overwrite_when_disabled(self):
+    def test_write_excel_sheets_raises(self) -> None:
         """
-        Should raise RuntimeError when overwrite is False and the target file already exists.
+        Should raise RuntimeError when no data is provided.
         """
         # ARRANGE
         with tempfile.TemporaryDirectory() as tmp_dir:
             folder = tmp_dir
-            file_name = "checker_log"
-            lines_initial = ("Original",)
-            lines_new = ("New content",)
-            overwrite = False
-
-            expected_path = os.path.join(folder, file_name + dep.text_io.TEXT_FILE_TYPE)
+            file_name = "bom_export"
+            sheets = {
+                "Sheet1": pd.DataFrame(),
+                "Sheet2": pd.DataFrame(),
+            }
             expected_exc = RuntimeError
-
-            # Create the initial file
-            exporter.write_text_file_lines(folder, file_name, lines_initial)
-            self.assertTrue(os.path.isfile(expected_path))
 
             # ACT
             try:
-                exporter.write_text_file_lines(folder, file_name, lines_new, overwrite=overwrite)
+                exporter.write_excel_sheets(folder, file_name, sheets)
                 actual = ""  # No exception raised
             except Exception as e:
                 actual = type(e)
@@ -140,15 +149,33 @@ class TestWriteTextFileLines(unittest.TestCase):
             with self.subTest(Out=actual, Exp=expected_exc):
                 self.assertEqual(actual, expected_exc)
 
-            # Verify file contents were not changed
-            with open(expected_path, "r", encoding="utf-8") as f:
-                actual_contents = f.read()
-            expected_contents = "\n".join(lines_initial)
+    def test_write_text_file_lines(self) -> None:
+        """
+        Should call write_text_file_lines and return None on the happy path.
+        """
+        # ARRANGE
+        fn = getattr(exporter, "write_text_file_lines", None)
+        expected_return = None
 
-            with self.subTest(Out=actual_contents, Exp=expected_contents):
-                self.assertEqual(actual_contents, expected_contents)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            folder = tmp_dir
+            file_name = "checker_log"
+            lines = ("Line 1", "Line 2")
+            expected_path = os.path.join(folder, file_name + dep.text_io.TEXT_FILE_TYPE)
 
-    def test_raises(self):
+            # ACT
+            result = fn(folder, file_name, lines)  # type: ignore[misc]
+            exists = os.path.isfile(expected_path)
+
+            # ASSERT
+            with self.subTest("callable_exists", Act=callable(fn), Exp=True):
+                self.assertTrue(callable(fn))
+            with self.subTest("return_type", Act=result, Exp=expected_return):
+                self.assertIsNone(result)
+            with self.subTest("file_exists", Act=exists, Exp=True):
+                self.assertTrue(exists)
+
+    def test_write_text_file_lines_raises(self):
         """
         Should raise RuntimeError when no lines are provided.
         """

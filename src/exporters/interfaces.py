@@ -14,11 +14,12 @@ Example Usage:
 Dependencies:
     - Python >= 3.10
     - Standard Library: None
-    - Internal Modules: ._build_filename.py
 
 Notes:
-    - Serves as the single public import location for all menu interactions.
-    - Internal modules remain non-public and may change without notice.
+	- This module contains no business logic and exists solely as a façade over internal exporter modules.
+	- Only the names re-exported here should be considered part of the supported public API.
+	- Internal modules may change without notice as long as this façade contract is preserved.
+	- Import-time failures will surface directly if internal modules or their dependencies are missing or renamed.
 
 
 License:
@@ -26,12 +27,24 @@ License:
 """
 
 # Re-export approved API functions from internal modules
+
 # noinspection PyProtectedMember
-from ._build_filename import build_checker_log_filename
+from ._build_filename import (
+    build_checker_log_filename,
+)
+
 # noinspection PyProtectedMember
-from ._text_file import write_text_file_lines
+from ._text_file import (
+    write_text_file_lines,
+)
+
+# noinspection PyProtectedMember
+from ._excel_file import (
+    write_excel_sheets,
+)
 
 __all__ = [
     "build_checker_log_filename",
     "write_text_file_lines",
+    "write_excel_sheets",
 ]

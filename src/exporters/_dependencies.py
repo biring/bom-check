@@ -24,4 +24,11 @@ License:
 """
 
 from src.models import interfaces as model
-from src.utils import file_path, folder_path, text_io, timestamp
+
+from src.utils import (
+    excel_io,
+    file_path,
+    folder_path,
+    text_io,
+    timestamp,
+)
