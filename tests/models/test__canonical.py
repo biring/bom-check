@@ -12,7 +12,7 @@ Test scope
 
 Execution
 	Preferred execution via project-root invocation
-		python -m unittest tests\models\test__canonical.py
+		python -m unittest tests/models/test__canonical.py
 
 	Test discovery (runs broader suite)
 		python -m unittest discover
