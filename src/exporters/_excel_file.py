@@ -33,19 +33,15 @@ License
 
 __all__ = []  # Internal-only; not exported publicly.
 
-from typing import Dict
-
 import pandas as pd
 
-from src.utils import excel_io
-from src.utils import file_path
-from src.utils import folder_path
+from ._dependencies import excel_io, file_path, folder_path
 
 
 def write_excel_sheets(
         folder: str,
         file_name: str,
-        sheets: Dict[str, pd.DataFrame],
+        sheets: dict[str, pd.DataFrame],
         *,
         overwrite: bool = False,
         top_row_is_header: bool = False,

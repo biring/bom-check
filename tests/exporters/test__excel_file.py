@@ -263,9 +263,10 @@ class TestWriteExcelSheets(unittest.TestCase):
         }
 
         # ACT
-        with patch(
-                "src.exporters._excel_file.excel_io.write_sheets_to_excel",
-                side_effect=Exception("boom"),
+        patch_file = ef.excel_io
+        patch_function = patch_file.write_sheets_to_excel.__name__
+        with patch.object(
+                patch_file, patch_function, side_effect=Exception("boom"),
         ):
             with self.assertRaises(RuntimeError) as ctx:
                 ef.write_excel_sheets(
