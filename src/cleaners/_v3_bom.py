@@ -92,7 +92,7 @@ def clean_v3_bom(bom: BomV3) -> tuple[BomV3, tuple[str, ...]]:
         clean_boards.append(clean_board)
 
     # Collect all cleaned boards and reconstruct final BOM
-    clean_bom: BomV3 = BomV3(boards=tuple(clean_boards), file_name=bom.file_name)
+    clean_bom: BomV3 = BomV3(boards=tuple(clean_boards), file_name=bom.file_name, is_cost_bom=bom.is_cost_bom)
 
     # Extract full log snapshot for external reporting
     frozen_change_log = change_log.render()

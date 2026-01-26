@@ -40,12 +40,21 @@ class TestCoerceBom(unittest.TestCase):
         Should keep BOM values unchanged and produce an empty log.
         """
         # ARRANGE
-        src = fx.BOM_B  # Clean fixture
-        # ACT
-        out_bom, log = cb.clean_v3_bom(src)
-        # ASSERT
-        with self.subTest("Log size", Out=len(log), Exp=0):
-            self.assertEqual(len(log), 0, log)
+        cases = (
+            (fx.BOM_B, True),  # Clean fixture
+            (replace(fx.BOM_B, is_cost_bom=False), False),
+        )
+        for bom, expected_is_cost_bom in cases:
+            # ACT
+            out_bom, log = cb.clean_v3_bom(bom)
+
+            # ASSERT
+            with self.subTest("Log size", Out=len(log), Exp=0):
+                self.assertEqual(len(log), 0, log)
+            with self.subTest("Is Cost Bom", Out=out_bom.is_cost_bom, Exp=expected_is_cost_bom):
+                self.assertEqual(out_bom.is_cost_bom, expected_is_cost_bom)
+            with self.subTest("File Name", Out=out_bom.file_name, Exp=fx.BOM_B.file_name):
+                self.assertEqual(out_bom.file_name, fx.BOM_B.file_name)
 
     def test_invalid(self):
         """
