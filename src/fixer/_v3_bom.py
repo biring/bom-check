@@ -94,7 +94,7 @@ def fix_v3_bom(bom: BomV3) -> tuple[BomV3, tuple[str, ...]]:
         fixed_boards.append(fixed_board_auto)
 
     # Collect all cleaned boards and reconstruct final BOM
-    fixed_bom: BomV3 = BomV3(boards=tuple(fixed_boards), file_name=bom.file_name)
+    fixed_bom: BomV3 = BomV3(boards=tuple(fixed_boards), file_name=bom.file_name, is_cost_bom=bom.is_cost_bom)
 
     # Extract full log snapshot for external reporting
     frozen_change_log = change_log.render()

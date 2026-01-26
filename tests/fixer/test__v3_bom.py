@@ -50,14 +50,22 @@ class TestFixV3Bom(unittest.TestCase):
         Should NOT modify valid BOM data and return an empty change-log.
         """
         # ARRANGE
-        src = bf.BOM_B  # Clean fixture
+        cases = (
+            (bf.BOM_B, True),
+            (replace(bf.BOM_B, is_cost_bom=False), False),
+        )
 
-        # ACT
-        out_bom, log = fb.fix_v3_bom(src)
+        for bom, expected_is_cost_bom in cases:
+            # ACT
+            out_bom, log = fb.fix_v3_bom(bom)
 
-        # ASSERT
-        with self.subTest("Log size", Out=len(log), Exp=0):
-            self.assertEqual(len(log), 0, log)
+            # ASSERT
+            with self.subTest("Log size", Out=len(log), Exp=0):
+                self.assertEqual(len(log), 0, log)
+            with self.subTest("Is Cost Bom", Out=out_bom.is_cost_bom, Exp=expected_is_cost_bom):
+                self.assertEqual(out_bom.is_cost_bom, expected_is_cost_bom)
+            with self.subTest("File Name", Out=out_bom.file_name, Exp=bf.BOM_B.file_name):
+                self.assertEqual(out_bom.file_name, bf.BOM_B.file_name)
 
     def test_invalid(self):
         """
