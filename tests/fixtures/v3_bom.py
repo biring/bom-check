@@ -180,6 +180,7 @@ BOARD_A_BAD_VALUE: Final[BoardV3] = BoardV3(
 BOM_A_BAD_VALUE: Final[BomV3] = BomV3(
     boards=(BOARD_A_BAD_VALUE,),
     file_name="bom_A_bad_value.xlsx",
+    is_cost_bom=True,
 )
 
 # =============================
@@ -284,4 +285,5 @@ BOARD_B2: Final[BoardV3] = BoardV3(
 BOM_B: Final[BomV3] = BomV3(
     boards=(BOARD_B1, BOARD_B2),
     file_name="bom_b.xlsx",
+    is_cost_bom=True,
 )
