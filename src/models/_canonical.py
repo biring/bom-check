@@ -45,7 +45,7 @@ class CanonicalComponent:
         component_type (str): Component type (e.g., resistor, capacitor).
         device_package (str): Package name (e.g., 0402, SOT-23).
         description (str): Component description.
-        manufacturer (str): Manufacturer name.
+        mfg_name (str): Manufacturer name.
         mfg_part_number (str): Manufacturer part number.
         ul_vde_number (str): Safety certification identifier, if applicable.
         validated_at (tuple[str, ...]): Build identifiers where this component is approved (e.g., ("EB0", "MP")).
@@ -57,7 +57,7 @@ class CanonicalComponent:
     component_type: str
     device_package: str
     description: str
-    manufacturer: str
+    mfg_name: str
     mfg_part_number: str
     ul_vde_number: str
     validated_at: tuple[str, ...]
@@ -74,7 +74,7 @@ class CanonicalComponentAttrNames:
     COMPONENT_TYPE = "component_type"
     DEVICE_PACKAGE = "device_package"
     DESCRIPTION = "description"
-    MANUFACTURER = "manufacturer"
+    MFG_NAME = "mfg_name"
     MFG_PART_NO = "mfg_part_number"
     UL_VDE_NUMBER = "ul_vde_number"
     VALIDATED_AT = "validated_at"
@@ -136,7 +136,7 @@ class CanonicalHeader:
     Args:
         model_no (str): Product model number.
         board_name (str): Board name (e.g., "MAIN-PCB-A").
-        manufacturer (str): Board supplier/manufacturer.
+        board_supplier (str): Board supplier.
         build_stage (str): Build stage identifier (e.g., "EB0", "MP").
         date (datetime): BOM release or creation date.
         material_cost (float): Material cost in RMB.
@@ -148,7 +148,7 @@ class CanonicalHeader:
     """
     model_no: str
     board_name: str
-    manufacturer: str
+    board_supplier: str
     build_stage: str
     date: datetime
     material_cost: float
@@ -165,7 +165,7 @@ class CanonicalHeaderAttrNames:
 
     MODEL_NUMBER = "model_no"
     BOARD_NAME = "board_name"
-    BOARD_SUPPLIER = "manufacturer"
+    BOARD_SUPPLIER = "board_supplier"
     BUILD_STAGE = "build_stage"
     BOM_DATE = "date"
     MATERIAL_COST = "material_cost"

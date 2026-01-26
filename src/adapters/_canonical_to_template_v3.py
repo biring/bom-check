@@ -64,7 +64,7 @@ _CANON_TABLE_ATTR_NAME_TO_TEMPLATE_V3_ROW_LABEL: dict[str, str] = {
     CanonicalComponentAttrNames.DESCRIPTION: TableLabelsV3.DESCRIPTION,
     CanonicalPartAttrNames.UNITS: TableLabelsV3.UNITS,
     CanonicalPartAttrNames.CLASSIFICATION: TableLabelsV3.CLASSIFICATION,
-    CanonicalComponentAttrNames.MANUFACTURER: TableLabelsV3.MFG_NAME,
+    CanonicalComponentAttrNames.MFG_NAME: TableLabelsV3.MFG_NAME,
     CanonicalComponentAttrNames.MFG_PART_NO: TableLabelsV3.MFG_PART_NO,
     CanonicalComponentAttrNames.UL_VDE_NUMBER: TableLabelsV3.UL_VDE_NO,
     CanonicalComponentAttrNames.VALIDATED_AT: TableLabelsV3.VALIDATED_AT,

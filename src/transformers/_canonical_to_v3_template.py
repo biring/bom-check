@@ -79,7 +79,7 @@ def _canonical_header_to_dict(header: CanonicalHeader) -> dict[str, Any]:
     return {
         CanonicalHeaderAttrNames.MODEL_NUMBER: str(header.model_no),
         CanonicalHeaderAttrNames.BOARD_NAME: str(header.board_name),
-        CanonicalHeaderAttrNames.BOARD_SUPPLIER: str(header.manufacturer),
+        CanonicalHeaderAttrNames.BOARD_SUPPLIER: str(header.board_supplier),
         CanonicalHeaderAttrNames.BUILD_STAGE: str(header.build_stage),
         CanonicalHeaderAttrNames.BOM_DATE: timestamp.format_date_iso(header.date),
         CanonicalHeaderAttrNames.MATERIAL_COST: header.material_cost,
@@ -122,7 +122,7 @@ def _canonical_row_to_dict(
         CanonicalComponentAttrNames.DESCRIPTION: str(component.description),
         CanonicalPartAttrNames.UNITS: str(part.unit),
         CanonicalPartAttrNames.CLASSIFICATION: str(part.classification),
-        CanonicalComponentAttrNames.MANUFACTURER: str(component.manufacturer),
+        CanonicalComponentAttrNames.MFG_NAME: str(component.mfg_name),
         CanonicalComponentAttrNames.MFG_PART_NO: str(component.mfg_part_number),
         CanonicalComponentAttrNames.UL_VDE_NUMBER: str(component.ul_vde_number),
         CanonicalComponentAttrNames.VALIDATED_AT: "/".join(component.validated_at),

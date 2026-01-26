@@ -121,7 +121,7 @@ def _map_header(raw_header: HeaderV3) -> CanonicalHeader:
     return CanonicalHeader(
         model_no=raw_header.model_no,
         board_name=raw_header.board_name,
-        manufacturer=raw_header.board_supplier,
+        board_supplier=raw_header.board_supplier,
         build_stage=raw_header.build_stage,
         date=dep.parser.parse_to_datetime(raw_header.bom_date),
         material_cost=dep.parser.parse_to_float(raw_header.material_cost),
@@ -146,7 +146,7 @@ def _map_row_to_component(row: RowV3) -> CanonicalComponent:
         component_type=row.component_type.strip(),
         device_package=row.device_package.strip(),
         description=row.description.strip(),
-        manufacturer=row.mfg_name.strip(),
+        mfg_name=row.mfg_name.strip(),
         mfg_part_number=row.mfg_part_number.strip(),
         ul_vde_number=row.ul_vde_number.strip(),
         validated_at=tuple(row.validated_at.replace("/", ",").split(",")),

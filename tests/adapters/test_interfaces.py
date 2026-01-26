@@ -95,7 +95,7 @@ class TestInterfaces(unittest.TestCase):
             CanonicalComponentAttrNames.DESCRIPTION: vfx.DESCRIPTION_GOOD[0],
             CanonicalPartAttrNames.UNITS: vfx.UNITS_GOOD[0],
             CanonicalPartAttrNames.CLASSIFICATION: vfx.CLASSIFICATION_GOOD[0],
-            CanonicalComponentAttrNames.MANUFACTURER: vfx.MFG_NAME_GOOD[0],
+            CanonicalComponentAttrNames.MFG_NAME: vfx.MFG_NAME_GOOD[0],
             CanonicalComponentAttrNames.MFG_PART_NO: vfx.MFG_PART_NO_GOOD[0],
             CanonicalComponentAttrNames.UL_VDE_NUMBER: vfx.UL_VDE_NO_GOOD[0],
             CanonicalComponentAttrNames.VALIDATED_AT: vfx.VALIDATED_AT_GOOD[0],
