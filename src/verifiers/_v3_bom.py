@@ -61,7 +61,7 @@ def verify_v3_bom(bom: BomV3) -> None:
             # Row-level verifications (field + logic) for each row on the board.
             for row in board.rows:
                 _verify_row_value(row)
-                _verify_row_logic(row)
+                _verify_row_logic(row, bom.is_cost_bom)
             # Header verifications that depend on the full set of rows.
             _verify_header_logic(board.header, board.rows)
             _verify_header_value(board.header)
@@ -219,7 +219,7 @@ def _verify_row_value(row: RowV3) -> None:
     return
 
 
-def _verify_row_logic(row: RowV3) -> None:
+def _verify_row_logic(row: RowV3, is_cost_bom: bool) -> None:
     """
     Run logic-level verification on a single BOM row.
 
@@ -227,8 +227,8 @@ def _verify_row_logic(row: RowV3) -> None:
     price consistency) through the `approve` interfaces.
 
     Args:
-        row (RowV3): Row instance whose aggregate logic and relationships
-            are being verified.
+        row (RowV3): Row instance whose aggregate logic and relationships are being verified.
+        is_cost_bom (bool): Whether the BOM includes cost data, used to determine which cost-related rules to enforce.
 
     Returns:
         None: All row logic verifications passed without raising an exception.
@@ -246,6 +246,10 @@ def _verify_row_logic(row: RowV3) -> None:
         approve.subtotal_zero,
         approve.sub_total_calculation,
     ]
+
+    # Unit price specified check is only applicable for costed BOMs
+    if not is_cost_bom:
+        cases.remove(approve.unit_price_specified)
 
     # Run each row-level logic verification and wrap failures with function context.
     for fn in cases:

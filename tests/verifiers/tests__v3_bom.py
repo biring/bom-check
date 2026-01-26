@@ -289,12 +289,31 @@ class TestVerifyRowLogic(unittest.TestCase):
         Should NOT raise any exception when row logic rules pass.
         """
         # ARRANGE
-        rows = bfx.BOARD_A.rows
+        cases = (
+            # test for costed bom
+            (bfx.ROW_A_1, True),
+            (bfx.ROW_A_1_ALT1, True),
+            (bfx.ROW_A_1_ALT2, True),
+            (bfx.ROW_A_2, True),
+            (bfx.ROW_A_2_ALT, True),
+            (bfx.ROW_A_3, True),
+            (bfx.ROW_A_4, True),
+            # test for not cost bom
+            (bfx.ROW_A_1, False),
+            (bfx.ROW_A_1_ALT1, False),
+            (bfx.ROW_A_1_ALT2, False),
+            (bfx.ROW_A_2, False),
+            (bfx.ROW_A_2_ALT, False),
+            (bfx.ROW_A_3, False),
+            (bfx.ROW_A_4, False),
+            # unit price not required for not costed bom
+            (replace(bfx.ROW_A_1, unit_price="0", sub_total="0"), False),
+        )
 
-        for row in rows:
+        for row, is_costed_bom in cases:
             # ACT
             try:
-                verify._verify_row_logic(row)
+                verify._verify_row_logic(row, is_costed_bom)
                 actual = ""
             except Exception as ex:
                 actual = type(ex).__name__
@@ -308,26 +327,39 @@ class TestVerifyRowLogic(unittest.TestCase):
         Should raise ValueError when row logic rules are violated.
         """
         # ARRANGE
-        rows = (
+        cases = (
+            # --- cost bom cases ---
             # quantity is zero when item is blank.
-            replace(bfx.ROW_A_1, item="", qty="2"),
+            (replace(bfx.ROW_A_1, item="", qty="2"), True),
             # designator is specified when quantity is an integer more than zero.
-            replace(bfx.ROW_A_1, qty="2", designators=""),
+            (replace(bfx.ROW_A_1, qty="2", designators=""), True),
             # designator count equals quantity when quantity is a greater than zero integer
-            replace(bfx.ROW_A_1, qty="2", designators="R1"),
+            (replace(bfx.ROW_A_1, qty="2", designators="R1"), True),
             # unit price is greater than zero when quantity is greater than zero.
-            replace(bfx.ROW_A_1, qty="2", unit_price="0"),
+            (replace(bfx.ROW_A_1, qty="2", unit_price="0"), True),
             # sub-total is zero when quantity is zero.
-            replace(bfx.ROW_A_1, qty="0", sub_total="1"),
+            (replace(bfx.ROW_A_1, qty="0", sub_total="1"), True),
             # sub-total is the product of quantity and unit price.
-            replace(bfx.ROW_A_1, qty="2", unit_price="0.1", sub_total="3")
+            (replace(bfx.ROW_A_1, qty="2", unit_price="0.1", sub_total="3"), True),
+
+            # --- not cost bom cases ---
+            # quantity is zero when item is blank.
+            (replace(bfx.ROW_A_1, item="", qty="2"), False),
+            # designator is specified when quantity is an integer more than zero.
+            (replace(bfx.ROW_A_1, qty="2", designators=""), False),
+            # designator count equals quantity when quantity is a greater than zero integer
+            (replace(bfx.ROW_A_1, qty="2", designators="R1"), False),
+            # sub-total is zero when quantity is zero.
+            (replace(bfx.ROW_A_1, qty="0", sub_total="1"), False),
+            # sub-total is the product of quantity and unit price.
+            (replace(bfx.ROW_A_1, qty="2", unit_price="0.1", sub_total="3"), False),
         )
         expected = ValueError.__name__
 
-        for row in rows:
+        for row, is_costed_bom in cases:
             # ACT
             try:
-                verify._verify_row_logic(row)
+                verify._verify_row_logic(row, is_costed_bom)
                 actual = ""
             except Exception as ex:
                 actual = type(ex).__name__
@@ -347,7 +379,7 @@ class TestVerifyRowLogic(unittest.TestCase):
         with patch.object(approve, "designator_count", new=_raise_type_error):
             # ACT
             try:
-                verify._verify_row_logic(row)
+                verify._verify_row_logic(row, is_cost_bom=True)
                 actual = ""
             except Exception as ex:
                 actual = type(ex).__name__
