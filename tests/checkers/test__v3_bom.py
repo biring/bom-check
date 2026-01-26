@@ -147,13 +147,13 @@ class TestCheckRowLogic(unittest.TestCase):
 
         for row in rows:
             # ACT
-            bck._check_row_logic(self.issues, row)
+            bck._check_row_logic(self.issues, row, is_cost_bom=True)
             result = len(self.issues.render())
             # ASSERT
             with self.subTest("Number of issues", Out=result, Exp=expected):
                 self.assertEqual(result, expected)
 
-    def test_invalid_rows(self):
+    def test_invalid_rows_costed_bom(self):
         """
         Should return errors when rows violate cross-field rules (e.g., subtotal mismatch, missing designator).
         """
@@ -184,7 +184,7 @@ class TestCheckRowLogic(unittest.TestCase):
         for row, expected in zip(rows, expected_errors):
             self.setUp()  # reset error logs
             # ACT
-            bck._check_row_logic(self.issues, row)
+            bck._check_row_logic(self.issues, row, is_cost_bom=True)
             issues = self.issues.render()
 
             # ASSERT
@@ -194,6 +194,60 @@ class TestCheckRowLogic(unittest.TestCase):
             for issue in issues:
                 with self.subTest("Issue string contains", Out=issue, Exp=expected):
                     self.assertIn(expected, issue)
+
+    def test_invalid_rows_not_costed_bom(self):
+        """
+        Should skip unit price specified rule for not a costed bom while keeping other cross-field checks.
+        """
+        # ARRANGE
+        rows = (
+            # quantity is zero when item is blank.
+            replace(bfx.ROW_A_1, item="", qty="2"),
+            # designator is specified when quantity is an integer more than zero.
+            replace(bfx.ROW_A_1, qty="2", designators=""),
+            # designator count equals quantity when quantity is a greater than zero integer
+            replace(bfx.ROW_A_1, qty="2", designators="R1"),
+            # sub-total is zero when quantity is zero.
+            replace(bfx.ROW_A_1, qty="0", sub_total="1"),
+            # sub-total is the product of quantity and unit price.
+            replace(bfx.ROW_A_1, qty="2", unit_price="0.1", sub_total="3")
+        )
+        expected_errors = (
+            TableLabelsV3.QUANTITY,
+            TableLabelsV3.DESIGNATORS,
+            TableLabelsV3.DESIGNATORS,
+            TableLabelsV3.SUB_TOTAL,
+            TableLabelsV3.SUB_TOTAL
+        )
+
+        for row, expected in zip(rows, expected_errors):
+            self.setUp()  # reset error logs
+            # ACT
+            bck._check_row_logic(self.issues, row, is_cost_bom=False)
+            issues = self.issues.render()
+
+            # ASSERT
+            with self.subTest("Number of issues", Out=len(issues), Exp="!=0"):
+                self.assertNotEqual(len(issues), 0)
+
+            for issue in issues:
+                with self.subTest("Issue string contains", Out=issue, Exp=expected):
+                    self.assertIn(expected, issue)
+
+    def test_unit_price_not_required_for_not_costed_bom(self):
+        """
+        Should not report unit price errors for not costed bom when quantity is greater than zero.
+        """
+        # ARRANGE
+        row = replace(bfx.ROW_A_1, qty="2", unit_price="0", sub_total="0")
+
+        # ACT
+        bck._check_row_logic(self.issues, row, False)
+        issues = self.issues.render()
+
+        # ASSERT
+        with self.subTest("Number of issues", Out=len(issues), Exp=0):
+            self.assertEqual(len(issues), 0)
 
 
 class TestCheckHeaderValue(unittest.TestCase):

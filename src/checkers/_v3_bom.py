@@ -67,7 +67,7 @@ def check_v3_bom(bom: BomV3) -> tuple[str, ...]:
         for row_index, row in enumerate(bom_board.rows, start=1):
             issue_log.set_section_name(f"{RowV3.__name__}: {row_index}")
             _check_row_value(issue_log, row)
-            _check_row_logic(issue_log, row)
+            _check_row_logic(issue_log, row, bom.is_cost_bom)
 
         # Header-level checks
         issue_log.set_section_name(HeaderV3.__name__)
@@ -175,7 +175,7 @@ def _check_row_value(issue_log: IssueLog, row: RowV3) -> None:
         issue_log.add_entry(check(field_value))
 
 
-def _check_row_logic(issue_log: IssueLog, row: RowV3) -> None:
+def _check_row_logic(issue_log: IssueLog, row: RowV3, is_cost_bom: bool) -> None:
     """
     Run logic-level checks on a single BOM row.
 
@@ -185,6 +185,7 @@ def _check_row_logic(issue_log: IssueLog, row: RowV3) -> None:
     Args:
         issue_log (IssueLog): Log used to record logic-level row issues.
         row (RowV3): Row instance to check for logic consistency.
+        is_cost_bom (bool): Whether the BOM includes cost data, used to determine which cost-related checks to enforce.
 
     Returns:
         None: Issues are recorded in the IssueLog.
@@ -201,6 +202,10 @@ def _check_row_logic(issue_log: IssueLog, row: RowV3) -> None:
         review.subtotal_zero,
         review.sub_total_calculation,
     ]
+
+    # Unit price specified check is only applicable for costed BOMs
+    if not is_cost_bom:
+        logic_checks.remove(review.unit_price_specified)
 
     # Run all logic checks and capture their results
     for check_fn in logic_checks:
