@@ -1,0 +1,29 @@
+{
+    "meta_data": {
+        "generated_at_utc": "2026-01-27T02:30:18Z",
+        "source_file_name": "board_supplier_codes.json",
+        "payload_sha256": "34C6FBD4866392FA8D36D295C108D16A5CECEADBD62377D2C3165C435F4A3157"
+    },
+    "payload_data": {
+        "CDSCN": "Cinderson China",
+        "FJCN": "Furja China",
+        "FJVN": "Furja Vietnam",
+        "FPCN": "Forepul China",
+        "GCECN": "GCE China",
+        "GCEVN": "GCE Vietnam",
+        "ITCN": "Inteltron China",
+        "ITVN": "Inteltron Vietnam",
+        "KCLCN": "Kingclean China",
+        "LGCN": "Longood China",
+        "LGTH": "Longood Thailand",
+        "LGVN": "Longood Vietnam",
+        "LGZJ": "Longood Zhejiang",
+        "SSCN": "Suntone China",
+        "STVN": "Suntone Vietnam",
+        "TBCN": "Topband China",
+        "TBTH": "Topband Thailand",
+        "TBVN": "Topband Vietnam",
+        "YDCCN": "YDC China",
+        "YDCVN": "YDC Vietnam"
+    }
+}
