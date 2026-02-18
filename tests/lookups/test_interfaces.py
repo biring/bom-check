@@ -1,62 +1,173 @@
 """
-Integration tests for the public lookups interfaces.
+Integration tests validating the public lookup interfaces for JSON-backed resources.
 
-This module verifies that lookup APIs exposed by the lookups package provide valid, populated lookup tables and related constants, without asserting internal resource-loading or caching behavior.
+This module verifies that the publicly exposed lookup access functions return dictionary-based lookup tables under normal conditions and raise a RuntimeError with a non-empty, informative message when cache initialization fails. The tests treat the interfaces as stable entry points and avoid asserting internal loading, parsing, or caching implementation details beyond observable behavior.
 
 Example Usage:
-    # Preferred usage via project-root invocation:
-    python -m unittest tests/lookups/test_interfaces.py
+	# Preferred usage via project-root invocation:
+	python -m unittest tests/lookups/test_interfaces.py
 
-    # Direct discovery (runs all tests, including this module):
-    python -m unittest discover -s tests
+	# Direct discovery (runs all tests, including this module):
+	python -m unittest discover -s tests
+
+Test Data and Fixtures:
+	- No external test data files are created; tests rely on existing packaged lookup resources.
+	- Internal cache state is reset before and after each test by explicitly clearing module-level cache variables.
+	- Failure scenarios are simulated using unittest.mock.patch to force exceptions during cache initialization.
 
 Dependencies:
-    - Python >= 3.10
-    - Standard Library: unittest
-    - Internal Packages: src.lookups.interfaces
+	- Python >= 3.10
+	- Standard Library: unittest, unittest.mock
 
 Notes:
-    - Tests are integration-style and exercise happy-path behavior only.
-    - Interfaces are treated as stable API contracts; tests assert presence, type, and basic validity of outputs.
-    - Resource files, paths, and parsing logic are owned by private lookup modules and are not patched or inspected here.
-    - Designed to catch API regressions as lookup resources and internals evolve.
+	- Tests are integration-style and validate only observable contract behavior of the public lookup accessors.
+	- Successful calls are asserted to return dictionary instances without validating specific contents.
+	- Error-path tests assert that unexpected initialization failures are surfaced as RuntimeError instances containing a non-empty message that includes the triggering reason.
+	- Private modules are accessed only to reset cache state and simulate initialization failures.
 
 License:
-    - Internal Use Only
+	Internal Use Only
 """
 
 import unittest
 
+from unittest.mock import patch
+
 from src.lookups import interfaces as lookup
 
+# noinspection PyProtectedMember
+from src.lookups import _board_supplier_codes as bsc  # For patch
 
-class TestInterfaces(unittest.TestCase):
+# noinspection PyProtectedMember
+from src.lookups import _component_type as ct  # For patch
+
+
+class TestGetBoardSupplierCodesLookupTable(unittest.TestCase):
     """
-    Integration tests for the public lookups interface.
+    Unit tests verifying the public interface for retrieving the board supplier codes lookup table.
     """
 
-    def test_component_type(self):
+    def setUp(self) -> None:
+        bsc._cache = None  # type: ignore[attr-defined]
+
+    def tearDown(self) -> None:
+        bsc._cache = None  # type: ignore[attr-defined]
+
+    def test_happy_path(self) -> None:
         """
-        Should expose a populated component-type lookup table and related constants via the public interfaces API.
+        Should return a dictionary lookup table on successful invocation.
         """
         # ARRANGE
-        # n/a
 
         # ACT
-        out_map = lookup.get_component_type_lookup_table()
-        folder_parts = lookup.COMPONENT_TYPE_FOLDER_PARTS
-        resource_name = lookup.COMPONENT_TYPE_RESOURCE_NAME
+        result = lookup.get_board_supplier_codes_lookup_table()
 
         # ASSERT
-        with self.subTest("Lookup table"):
-            self.assertIsInstance(out_map, dict)
-            self.assertGreater(len(out_map), 0)
-        with self.subTest("Folder parts"):
-            self.assertIsInstance(folder_parts, tuple)
-            self.assertGreater(len(folder_parts), 0)
-        with self.subTest("Resource name"):
-            self.assertIsInstance(resource_name, str)
-            self.assertGreater(len(resource_name), 0)
+        with self.subTest("Return value type"):
+            self.assertIsInstance(result, dict)
+
+        with self.subTest("Return value is not empty"):
+            self.assertNotEqual(result, {})
+
+    def test_raises(self) -> None:
+        """
+        Should raise RuntimeError when cache initialization fails.
+        """
+        # ARRANGE
+        expected_type = RuntimeError.__name__
+        expected_reason = "Unexpected error"
+
+        patch_file = bsc
+        patch_function = patch_file.CacheReadOnly.__name__
+
+        # ACT
+        try:
+            with patch.object(
+                    patch_file,
+                    patch_function,
+                    side_effect=Exception(expected_reason),
+            ):
+                bsc.get_board_supplier_codes_lookup_table()
+            actual = ""
+        except Exception as e:
+            actual = e
+
+        # ASSERT
+        actual_type = type(actual).__name__
+        with self.subTest("Error", Exp=expected_type, Act=actual_type):
+            self.assertEqual(expected_type, actual_type)
+
+        actual_args = getattr(actual, "args", ())
+        with self.subTest("Message string is not empty"):
+            self.assertTrue(bool(actual_args) and str(actual_args[0]) != "")
+
+        actual_message = str(actual)
+        with self.subTest("Message contains reason", Exp=expected_reason, Act=actual_message):
+            self.assertIn(expected_reason, actual_message)
+
+
+class TestGetComponentTypeLookupTable(unittest.TestCase):
+    """
+    Unit tests verifying the public interface for retrieving the component type lookup table.
+    """
+
+    def setUp(self) -> None:
+        ct._cache = None  # type: ignore[attr-defined]
+
+    def tearDown(self) -> None:
+        ct._cache = None  # type: ignore[attr-defined]
+
+    def test_happy_path(self) -> None:
+        """
+        Should return a dictionary lookup table on successful invocation.
+        """
+        # ARRANGE
+
+        # ACT
+        result = lookup.get_component_type_lookup_table()
+
+        # ASSERT
+        with self.subTest("Return value type"):
+            self.assertIsInstance(result, dict)
+
+        with self.subTest("Return value is not empty"):
+            self.assertNotEqual(result, {})
+
+    def test_raises(self) -> None:
+        """
+        Should raise RuntimeError when cache initialization fails.
+        """
+        # ARRANGE
+        expected_type = RuntimeError.__name__
+        expected_reason = "Unexpected error"
+
+        patch_file = ct
+        patch_function = patch_file.CacheReadOnly.__name__
+
+        # ACT
+        try:
+            with patch.object(
+                    patch_file,
+                    patch_function,
+                    side_effect=Exception(expected_reason),
+            ):
+                ct.get_component_type_lookup_table()
+            actual = ""
+        except Exception as e:
+            actual = e
+
+        # ASSERT
+        actual_type = type(actual).__name__
+        with self.subTest("Error", Exp=expected_type, Act=actual_type):
+            self.assertEqual(expected_type, actual_type)
+
+        actual_args = getattr(actual, "args", ())
+        with self.subTest("Message string is not empty"):
+            self.assertTrue(bool(actual_args) and str(actual_args[0]) != "")
+
+        actual_message = str(actual)
+        with self.subTest("Message contains reason", Exp=expected_reason, Act=actual_message):
+            self.assertIn(expected_reason, actual_message)
 
 
 if __name__ == '__main__':
