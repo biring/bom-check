@@ -3,17 +3,18 @@ Raw data model for the version 3 BOM template.
 
 This module defines immutable Python dataclasses that mirror the layout of a version 3 Excel-based Bill of Materials. It captures board-level metadata, component rows, and file-level grouping as represented in the source workbook, with all values stored as plain strings to tolerate missing or partially populated input.
 
-Key responsibilities
-	- Represent component-level BOM rows using string-valued fields.
-	- Represent board-level BOM metadata and associated component rows.
-	- Represent a multi-board BOM file as an immutable aggregate.
-	- Provide a parser-friendly, side-effect-free data structure.
+Key Responsibilities:
+	- Represent component-level BOM entries using string-based fields
+	- Represent board-level metadata and associated component collections
+	- Aggregate multiple boards into a single file-level structure
+	- Provide immutable, parser-friendly data containers without side effects
+	- Provide formatted string output for debugging and inspection
 
 Example usage
 	Preferred usage via public package interface
 	Not Applicable. This is an internal module.
 
-	Direct module usage (acceptable in unit tests or internal scripts only)
+	# Direct module usage (acceptable in unit tests or internal scripts only):
 	from src.models import _bom_v3 as models
 	bom = models.BomV3(boards=tuple(), file_name="example.xlsx", is_cost_bom=True)
 
@@ -21,11 +22,12 @@ Dependencies
 	- Python 3.10
 	- Standard Library: dataclasses
 
-Notes
-	- All fields default to empty strings to simplify parsing and tolerate missing values.
-	- Dataclasses are frozen to prevent mutation of raw parsed input.
-	- Attribute name constants provide a refactor-safe contract for adapter or mapping layers.
-	- The module does not perform validation, normalization, or type coercion.
+Notes:
+	- All data fields default to empty strings to tolerate missing or partial input
+	- Data structures are immutable to preserve integrity of parsed input
+	- No validation, normalization, or type coercion is performed
+	- Attribute name constants provide stable references for mapping layers
+	- String formatting utility provides column-aligned debug output
 
 License
 	Internal Use Only
@@ -35,6 +37,53 @@ __all__ = []  # Internal-only; not part of public API. Star import from this mod
 
 from dataclasses import dataclass
 
+class _BomV3Base:
+
+    def __str__(self) -> str:
+        """
+        Build a formatted string representation of instance attributes.
+
+        Iterates over the instance __dict__ in insertion order and formats key-value pairs into fixed-width columns.
+        Attribute names are normalized to human-readable labels by replacing underscores and applying title case.
+        Values exceeding the configured column width are truncated with an ellipsis to preserve alignment.
+
+        Returns:
+            str: A formatted multi-line string representing the instance state.
+        """
+        no_columns = 3  # Fixed number of columns per row; invariant for layout consistency
+        column_width = 50  # Hard constraint to enforce column alignment regardless of content variability
+        ending_dots = "..."  # Suffix used to indicate truncation; must fit within column_width
+        count = 0  # Tracks processed attributes to enforce row breaks deterministically
+        print_out = "" # Accumulates the final output string; built incrementally to maintain control over formatting and layout
+
+        # Iterate over instance attributes; relies on dict insertion order for stable output
+        for name, value in self.__dict__.items():
+            # Normalize attribute name into display label; assumes snake_case input
+            label = name.replace("_", " ").title()
+
+            # Construct full display string prior to enforcing width constraints
+            label_and_value = f"{label}: {value}"
+
+            # Enforce fixed-width invariant by truncating overly long entries
+            if len(label_and_value) > column_width:
+                # Ensure truncation leaves space for ellipsis; prevents overflow beyond column boundary
+                label_and_value = label_and_value[:column_width - len(ending_dots)] + ending_dots
+
+            # Left-align within column width to maintain grid-like structure across rows
+            print_out += f"{label_and_value:<{column_width}}"
+
+            # Insert newline after every N columns to form consistent rows
+            if count % no_columns == no_columns - 1:
+                print_out += "\n"
+
+            # Increment after processing to maintain correct modulo grouping behavior
+            count += 1
+
+        # Remove trailing newline to avoid unintended blank line at output end
+        if print_out.endswith("\n"):
+            print_out = print_out[:-1]
+
+        return print_out
 
 class RowV3AttrNames:
     """
@@ -59,7 +108,7 @@ class RowV3AttrNames:
 
 
 @dataclass(frozen=True)
-class RowV3:
+class RowV3(_BomV3Base):
     """
     Represents a single row in the BOM table.
 
@@ -114,7 +163,7 @@ class HeaderV3AttrNames:
 
 
 @dataclass(frozen=True)
-class HeaderV3:
+class HeaderV3(_BomV3Base):
     """
     Represents the header metadata for a single board BOM.
 
