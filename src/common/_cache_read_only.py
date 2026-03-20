@@ -208,7 +208,10 @@ class CacheReadOnly:
             self._data_map = data
 
         except Exception as err:
-            raise ImportError(f"Failed to initialize shared JSON resource cache for '{resource_name}'.") from err
+            raise ImportError(
+                f"Failed to initialize shared JSON resource cache for '{resource_name}'."
+                f"\n{err}"
+            ) from err
 
     def get_data_map_copy(self) -> dict[str, Any]:
         """
