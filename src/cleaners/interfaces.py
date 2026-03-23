@@ -28,10 +28,10 @@ License:
 # Re-export selected API from internal modules to expose as public API
 
 # noinspection PyProtectedMember
-from src.cleaners._v3_bom import (
-    clean_v3_bom as v3_bom,
+from ._v3_bom import (
+    clean_v3_bom,
 )
 
 __all__ = [
-    "v3_bom",
+    "clean_v3_bom",
 ]

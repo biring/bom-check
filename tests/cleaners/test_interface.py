@@ -47,7 +47,7 @@ class TestV3Bom(unittest.TestCase):
         # ARRANGE
         src = fx.BOM_B  # Clean fixture
         # ACT
-        out_bom, log = clean.v3_bom(src)
+        out_bom, log = clean.clean_v3_bom(src)
         # ASSERT
         with self.subTest("Log size", Out=len(log), Exp=0):
             self.assertEqual(len(log), 0, log)
@@ -70,7 +70,7 @@ class TestV3Bom(unittest.TestCase):
             ),
         )
         # ACT
-        out_bom, log = clean.v3_bom(src_dirty)
+        out_bom, log = clean.clean_v3_bom(src_dirty)
 
         # ASSERT
         with self.subTest("Log size", Out=len(log), Exp=">0"):
