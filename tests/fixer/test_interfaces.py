@@ -49,7 +49,7 @@ class TestV3Bom(unittest.TestCase):
         src = fx.BOM_A  # Clean fixture
 
         # ACT
-        out_bom, log = fixer.v3_bom(src)
+        out_bom, log = fixer.fix_v3_bom(src)
 
         # ASSERT
         with self.subTest("Log size", Out=len(log), Exp=0):
@@ -74,7 +74,7 @@ class TestV3Bom(unittest.TestCase):
         )
 
         # ACT
-        bom_out, log = fixer.v3_bom(bom_in)
+        bom_out, log = fixer.fix_v3_bom(bom_in)
 
         # ASSERT
         with self.subTest("Log size", Out=len(log), Exp=">0"):
