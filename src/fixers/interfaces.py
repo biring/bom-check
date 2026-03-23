@@ -1,15 +1,15 @@
 """
-Public interface façade for the `fixer` package.
+Public interface façade for the `fixers` package.
 
 This module re-exports curated BOM field-fixer functions for BOM fix workflows while keeping underlying logic encapsulated. It defines the public entry points for BOM correction workflows while keeping underlying logic encapsulated.
 
 Example Usage:
     # Preferred usage via package interface:
-    from src.fixer import interfaces as fixer
+    from src.fixers import interfaces as fixer
     fixed_bom, change_log = fixer.v3_bom(raw_bom)
 
     # Direct internal usage (acceptable in tests only):
-    from src.fixer import interfaces as fixer
+    from src.fixers import interfaces as fixer
     fixed_bom, change_log = fixer.v3_bom(raw_bom)
 
 Dependencies:

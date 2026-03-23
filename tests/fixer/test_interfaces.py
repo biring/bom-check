@@ -1,14 +1,14 @@
 """
-Unit tests for the public interfaces of the `fixer` package.
+Unit tests for the public interfaces of the `fixers` package.
 
-This module provides smoke tests for `src.fixer.interfaces`, ensuring:
+This module provides smoke tests for `src.fixers.interfaces`, ensuring:
     - Public functions (e.g., v3_bom) are callable and return correct types
     - Clean inputs produce empty logs
     - Dirty inputs trigger coercion and non-empty logs
 
 Example Usage:
     # Preferred usage via project-root invocation:
-    python -m unittest tests/fixer/test_interface.py
+    python -m unittest tests/fixers/test_interface.py
 
     # Direct discovery (runs all tests, including this module):
     python -m unittest discover -s tests
@@ -16,7 +16,7 @@ Example Usage:
 Dependencies:
     - Python >= 3.10
     - Standard Library: unittest, dataclasses
-    - Internal Packages: src.fixer.interfaces, tests.fixtures.v3_bom
+    - Internal Packages: src.fixers.interfaces, tests.fixtures.v3_bom
 
 Notes:
     - Focused on API surface verification, not detailed fixer logic.
@@ -33,7 +33,7 @@ from dataclasses import replace
 from unittest.mock import patch
 
 from tests.fixtures import v3_bom as fx
-from src.fixer import interfaces as fixer
+from src.fixers import interfaces as fixer
 
 
 class TestV3Bom(unittest.TestCase):

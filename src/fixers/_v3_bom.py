@@ -5,23 +5,23 @@ This module applies both manual and automatic field corrections across the BOM h
 
 Example Usage:
     # Preferred usage via package interface:
-    from src.fixer import interfaces as fix
+    from src.fixers import interfaces as fix
     fixed_bom, log = fix.bom(raw_bom)
 
     # Direct internal usage (unit tests or internal scripts only):
-    from src.fixer import _v3_bom as v3
+    from src.fixers import _v3_bom as v3
     fixed_bom, log = v3.fix_v3_bom(raw_bom)
 
 Dependencies:
     - Python >= 3.10
     - Standard Library: dataclasses
-    - Internal Packages: src.models, src.correction, src.fixer._types
+    - Internal Packages: src.models, src.correction
 
 Notes:
     - Designed exclusively for structured Version 3 BOMs with valid model hierarchy.
     - ChangeLog accumulates human-readable audit messages, grouped by contextual scope.
     - Manual fixers rely on user-provided corrections; auto fixers apply deterministic rules.
-    - External callers should invoke through `src.fixer.interfaces` to preserve API boundaries.
+    - External callers should invoke through `src.fixers.interfaces` to preserve API boundaries.
 
 License:
     - Internal Use Only

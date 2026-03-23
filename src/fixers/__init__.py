@@ -1,11 +1,11 @@
 """
-Package initializer for the `fixer` package.
+Package initializer for the `fixers` package.
 
 Exposes only the `interfaces` submodule at package level to enforce a clean, stable façade for consumers. This prevents direct imports from internal modules and ensures future refactors do not break external code.
 
 Example Usage:
     # Preferred usage via package interface:
-    from src.fixer import interfaces as fixer
+    from src.fixers import interfaces as fixer
     fixed_bom, change_log = fixer.v3_bom(raw_bom)
 
 Dependencies:

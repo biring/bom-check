@@ -1,9 +1,9 @@
 """
-Unit tests for the Version 3 BOM fixer module.
+Unit tests for the Version 3 BOM fixers module.
 
 Example Usage:
     # Preferred usage via project-root invocation:
-    python -m unittest tests/fixer/test__v3_bom.py
+    python -m unittest tests/fixers/test__v3_bom.py
 
     # Direct discovery (runs all tests, including this module):
     python -m unittest discover -s tests
@@ -11,7 +11,7 @@ Example Usage:
 Dependencies:
     - Python >= 3.10
     - Standard Library: unittest, typing, unittest.mock
-    - Internal Packages: src.fixer._v3_bom, src.fixer._types, src.models.interfaces
+    - Internal Packages: src.fixers._v3_bom, src.models.interfaces
 
 Notes:
     - Tests mock correction, CLI, and runtime interfaces to isolate orchestration from rule logic.
@@ -36,7 +36,7 @@ from src.models.interfaces import (
 )
 from src.cli import interfaces as cli  # for patch at interface
 # noinspection PyProtectedMember
-from src.fixer import _v3_bom as fb  # Direct internal import — acceptable in tests
+from src.fixers import _v3_bom as fb  # Direct internal import — acceptable in tests
 from tests.fixtures import v3_bom as bf
 
 
