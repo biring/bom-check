@@ -1,0 +1,13 @@
+# Core dependencies
+pandas==2.2.0 # pinned due to incompatibility with 3.x (string dtype behavior)
+openpyxl==3.1.5
+
+# String matching / performance
+python-Levenshtein==0.25.1
+
+# HTTP + time sync (used in tests)
+requests
+ntplib==0.4.0
+
+# CLI formatting
+colorama
