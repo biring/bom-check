@@ -35,6 +35,7 @@ from unittest.mock import patch
 # noinspection PyProtectedMember
 from src.controllers import _clean_bom as cb
 
+from tests.fixtures import v3_df as bfx
 
 class TestCleanBomController(unittest.TestCase):
     """
@@ -85,52 +86,54 @@ class TestCleanBomController(unittest.TestCase):
         Should execute the workflow and populate controller state.
         """
         # ARRANGE
+        source_bom = bfx.BOM_B_DATAFRAME
+        patched_path = "some_path"
+        patched_file_name = "some_file"
         controller = cb.CleanBomController()
 
+        patch_cache = controller.temp_settings_cache
         patch_menu = cb.menu
         patch_importer = cb.importer
-        patch_parser = cb.parser
-        patch_cleaner = cb.cleaner
-        patch_fixer = cb.fixer
-        patch_checker = cb.checker
-        patch_mapper = cb.mapper
-        patch_transformer = cb.transformer
         patch_exporter = cb.exporter
 
-        with patch.object(patch_menu, patch_menu.folder_selector.__name__, side_effect=["C:\\Code", "C:\\Code"]), \
-             patch.object(patch_menu, patch_menu.file_selector.__name__, return_value="file.xlsx"), \
-             patch.object(patch_importer, patch_importer.read_excel_as_dict.__name__, return_value={"S": {}}), \
-             patch.object(patch_parser, patch_parser.is_v3_bom.__name__, return_value=True), \
-             patch.object(patch_parser, patch_parser.parse_v3_bom.__name__, return_value={}), \
-             patch.object(patch_cleaner, patch_cleaner.clean_v3_bom.__name__, return_value=({}, ("clean",))), \
-             patch.object(patch_fixer, patch_fixer.fix_v3_bom.__name__, return_value=({}, ("fix",))), \
-             patch.object(patch_checker, patch_checker.check_v3_bom.__name__, return_value=("check",)), \
-             patch.object(patch_mapper, patch_mapper.map_v3_to_canonical_bom.__name__, return_value={}), \
-             patch.object(patch_importer, patch_importer.load_version3_bom_template.__name__, return_value={}), \
-             patch.object(patch_transformer, patch_transformer.canonical_to_v3_template_sheets.__name__, return_value={"S": {}}), \
-             patch.object(patch_exporter, patch_exporter.build_checker_log_filename.__name__, return_value="out.xlsx"), \
-             patch.object(patch_exporter, patch_exporter.write_excel_sheets.__name__, return_value=None):
+        with (
+            patch.object(patch_cache, patch_cache.get_value.__name__, return_value=[patched_path, patched_path, patched_path, patched_path]),
+            patch.object(patch_menu, patch_menu.folder_selector.__name__, side_effect=[patched_path, patched_path]),
+            patch.object(patch_menu, patch_menu.file_selector.__name__, return_value=patched_file_name),
+            patch.object(patch_importer, patch_importer.read_excel_as_dict.__name__, return_value=source_bom),
+            patch.object(patch_exporter, patch_exporter.build_checker_log_filename.__name__, return_value=patched_file_name),
+            patch.object(patch_exporter, patch_exporter.write_excel_sheets.__name__, return_value=None)
+        ):
 
             # ACT
-            result = controller.run() # noqa
+            actual = controller.run() # noqa
+
 
         # ASSERT
-        with self.subTest("Return type"):
-            self.assertIsNone(result)
+        with self.subTest("Empty checker log"):
+            self.assertEqual(len(controller.checker_log), 0)
+        with self.subTest("Empty fixer log"):
+            self.assertEqual(len(controller.fixer_log), 0)
+        with self.subTest("Empty cleaner log"):
+            self.assertEqual(len(controller.cleaner_log), 0)
 
-        with self.subTest("Source and destination state"):
-            self.assertEqual(controller.source_folder, "C:\\Code")
-            self.assertEqual(controller.destination_folder, "C:\\Code")
-            self.assertEqual(controller.source_file, "file.xlsx")
-            self.assertEqual(controller.destination_file, "out.xlsx")
+        # Verify bom
+        expected = source_bom
+        actual = controller.output_sheets
 
-        with self.subTest("Logs types"):
-            self.assertIsInstance(controller.cleaner_log, tuple)
-            self.assertIsInstance(controller.fixer_log, tuple)
-            self.assertIsInstance(controller.checker_log, tuple)
+        with self.subTest("Bom count", Exp=len(expected), Act=len(actual)):
+            self.assertEqual(len(expected), len(actual))
 
-        with self.subTest("Output sheets type"):
-            self.assertIsInstance(controller.output_sheets, dict)
+        for ((expected_name, expected_df), (actual_name, actual_df)) in zip(expected.items(), actual.items()):
+            with self.subTest(f"Sheet: {expected_name}"):
+                self.assertEqual(expected_name, actual_name)
+
+            expected_df_as_lists = expected_df.fillna("").astype(str).values.tolist()
+            actual_df_as_lists = actual_df.fillna("").astype(str).values.tolist()
+
+            with self.subTest(f"Board: {expected_name}"):
+                self.assertEqual(expected_df_as_lists, actual_df_as_lists)
+
 
     def test_raise(self) -> None:
         """
@@ -147,7 +150,7 @@ class TestCleanBomController(unittest.TestCase):
 
         # ACT
         try:
-            with patch.object(patch_file, patch_function, side_effect=Exception("failure")):
+            with patch.object(patch_file, patch_function, side_effect=Exception(expected_reason)):
                 controller.run()
             actual = ""
         except Exception as e:
