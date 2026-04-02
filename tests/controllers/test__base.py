@@ -1,7 +1,7 @@
 """
-Validates initialization behavior and execution contract enforcement for a base controller.
+Validate initialization behavior, dependency failure handling, execution contract enforcement, and immutable specification storage for a controller abstraction.
 
-This module contains unit tests that verify correct initialization of internal state using external dependencies and proper error handling when those dependencies fail, as well as enforcement of an abstract execution contract by ensuring a runtime error is raised when a required method is not implemented.
+This module contains unit tests that verify that controller initialization correctly assigns externally provided resources without transformation, that initialization failures are surfaced as runtime errors with preserved context, that the execution entry point enforces an abstract contract by raising an error when not implemented, and that a separate immutable specification object stores provided metadata and class references accurately.
 
 Example Usage:
 	# Preferred usage via project-root invocation:
@@ -11,21 +11,20 @@ Example Usage:
 	python -m unittest discover -s tests
 
 Test Data and Fixtures:
-	- Uses unittest.mock.patch to replace dependency functions and attributes with controlled return values and side effects.
-	- Creates in-memory objects and dictionaries to simulate cache data and lookup tables.
-	- No filesystem or external resource interaction is present; all data is ephemeral and scoped to individual tests.
-	- Relies on context-managed patching to ensure automatic cleanup after each test.
+	- Uses unittest.mock.patch to replace external dependency functions and attributes with controlled return values and exceptions.
+	- Constructs in-memory objects and dictionaries to simulate caches, key sets, and lookup tables.
+	- Instantiates objects directly without filesystem or network interaction.
+	- Relies on context-managed patching to ensure automatic restoration of original state after each test.
 
 Dependencies:
 	- Python 3.10+
 	- Standard Library: unittest, unittest.mock
 
 Notes:
-	- Tests assert identity (not equality) for injected dependencies, ensuring objects are assigned directly without transformation.
-	- Error handling validation checks both exception type and that the message is non-empty and contains the original failure reason.
-	- Initialization behavior is sensitive to external dependency failures, which are simulated via exception side effects.
-	- Execution contract enforcement is validated by confirming that direct invocation raises a not-implemented error.
-	- Tests are deterministic and hermetic due to controlled mocking of all external interactions.
+	- Assertions verify object identity for injected dependencies, ensuring direct assignment rather than copying or transformation.
+	- Failure scenarios validate both exception type and that the resulting message is non-empty and includes the original error reason.
+	- Execution contract enforcement is validated by confirming an error is raised when the entry point is invoked without an override.
+	- Tests are deterministic and hermetic due to complete control over external dependencies via mocking.
 
 License:
 	Internal Use Only
@@ -40,10 +39,10 @@ from src.controllers import _base as bc
 
 class TestBaseController(unittest.TestCase):
     """
-    Unit tests verifying initialization of shared caches and lookup table.
+    Unit tests verifying base controller class.
     """
 
-    def test_happy_path(self) -> None:
+    def test_init(self) -> None:
         """
         Should initialize all expected attributes using provided dependencies.
         """
@@ -110,13 +109,7 @@ class TestBaseController(unittest.TestCase):
             with self.subTest("Message contains reason"):
                 self.assertIn(expected_reason, actual_message)
 
-
-class Testrun(unittest.TestCase):
-    """
-    Unit tests verifying enforcement of subclass execution contract.
-    """
-
-    def test_happy_path(self) -> None:
+    def test_run(self) -> None:
         """
         Should raise NotImplementedError when called directly.
         """
@@ -140,6 +133,35 @@ class Testrun(unittest.TestCase):
         with self.subTest("Message string is not empty"):
             self.assertTrue(bool(actual_args) and str(actual_args[0]) != "")
 
+class TestControllerSpec(unittest.TestCase):
+    """
+    Unit tests verifying immutable specification stores controller metadata.
+    """
+
+    def test_happy_path(self) -> None:
+        """
+        Should create immutable spec with provided values.
+        """
+        # ARRANGE
+        name = "base"
+        description = "shared workflow controller"
+        cls = bc.BaseController
+
+        # ACT
+        spec = bc.ControllerSpec(name=name, description=description, cls=cls)
+
+        # ASSERT
+        with self.subTest("Type"):
+            self.assertIsInstance(spec, bc.ControllerSpec)
+
+        with self.subTest("name field"):
+            self.assertEqual(spec.name, name)
+
+        with self.subTest("description field"):
+            self.assertEqual(spec.description, description)
+
+        with self.subTest("cls field"):
+            self.assertIs(spec.cls, cls)
 
 if __name__ == "__main__":
     try:

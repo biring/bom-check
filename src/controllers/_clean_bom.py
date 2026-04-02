@@ -84,6 +84,9 @@ class CleanBomController(base.BaseController):
         checker_log (tuple[str, ...] | None): Checker stage findings returned by the checker.
     """
 
+    name = "Repair BOM"
+    description = "Process BOM through automatic and manual error correction."
+
     def __init__(self):
         """
         Initialize controller-owned workflow state.

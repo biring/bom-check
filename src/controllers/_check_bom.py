@@ -53,6 +53,9 @@ _OUTPUT_DATA_FOLDER: str = "Select the destination data folder"
 
 class CheckBomController(base.BaseController):
 
+    name = "Check BOM"
+    description = "Run BOM verification checks and generate a structured issue report."
+
     def __init__(self):
         """
         Initialize the CheckBomController with default state.
