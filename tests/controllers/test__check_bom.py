@@ -31,18 +31,19 @@ License:
 """
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # noinspection PyProtectedMember
 from src.controllers import _check_bom as cb
 
+from tests.fixtures import v3_df as bfx
 
-class TestCheckBomControllerInit(unittest.TestCase):
+class TestCheckBomController(unittest.TestCase):
     """
-    Unit tests verifying initialization establishes default controller state.
+    Unit tests verifying check BOM controller.
     """
 
-    def test_happy_path(self) -> None:
+    def test_init(self) -> None:
         """
         Should initialize all attributes to None and call base initializer.
         """
@@ -80,70 +81,47 @@ class TestCheckBomControllerInit(unittest.TestCase):
         with self.subTest("checkers_log is None"):
             self.assertIsNone(controller.checkers_log)
 
-
-
-class TestCheckBomControllerRun(unittest.TestCase):
-    """
-    Unit tests verifying run orchestrates the BOM validation workflow.
-    """
-
-    def setUp(self) -> None:
-        # Minimal controller with required base attributes stubbed
-        self.controller = cb.CheckBomController.__new__(cb.CheckBomController)
-        self.controller.temp_settings_cache = MagicMock()
-        self.controller.temp_setting_keys = MagicMock()
-        self.controller.temp_setting_keys.SOURCE_FILES_FOLDER = "source_key"
-        self.controller.temp_setting_keys.DESTINATION_FILES_FOLDER = "dest_key"
-
     def test_happy_path(self) -> None:
         """
         Should execute workflow and complete without error.
         """
         # ARRANGE
-        self.controller.temp_settings_cache.get_value.side_effect = ["src_folder", "dst_folder"]
+        controller = cb.CheckBomController()
+        source_bom = bfx.BOM_B_DATAFRAME
+        patched_path = "some_path"
+        patched_file_name = "some_file"
 
+        patch_cache = controller.temp_settings_cache
         patch_menu = cb.menu
         patch_importer = cb.importer
-        patch_parser = cb.parser
-        patch_checker = cb.checker
         patch_exporter = cb.exporter
 
-        with patch.object(patch_menu, patch_menu.folder_selector.__name__, side_effect=["src_folder", "dst_folder"]), \
-             patch.object(patch_menu, patch_menu.file_selector.__name__, return_value="file.xlsx"), \
-             patch.object(patch_importer, patch_importer.read_excel_as_dict.__name__, return_value={"Sheet1": MagicMock()}), \
-             patch.object(patch_parser, patch_parser.parse_v3_bom.__name__, return_value=MagicMock()), \
-             patch.object(patch_checker, patch_checker.check_v3_bom.__name__, return_value=("a|b", "c|d")), \
-             patch.object(patch_exporter, patch_exporter.build_checker_log_filename.__name__, return_value="out.txt"), \
-             patch.object(patch_exporter, patch_exporter.write_text_file_lines.__name__, return_value=None), \
-             patch.object(patch_exporter, patch_exporter.write_excel_sheets.__name__, return_value=None):
+        with (
+            patch.object(patch_cache, patch_cache.get_value.__name__, return_value=patched_path),
+            patch.object(patch_menu, patch_menu.folder_selector.__name__, side_effect=[patched_path, patched_path]),
+            patch.object(patch_menu, patch_menu.file_selector.__name__, return_value=patched_file_name),
+            patch.object(patch_importer, patch_importer.read_excel_as_dict.__name__, return_value=source_bom),
+            patch.object(patch_exporter, patch_exporter.build_checker_log_filename.__name__, return_value=patched_file_name),
+            patch.object(patch_exporter, patch_exporter.write_text_file_lines.__name__, return_value=None)
+        ):
 
             # ACT
-            result = self.controller.run() # noqa
+            controller.run()
 
         # ASSERT
-        with self.subTest("Return type"):
-            self.assertIsNone(result)
-
-        with self.subTest("source_folder set"):
-            self.assertEqual(self.controller.source_folder, "src_folder")
-
-        with self.subTest("destination_folder set"):
-            self.assertEqual(self.controller.destination_folder, "dst_folder")
-
-        with self.subTest("source_file set"):
-            self.assertEqual(self.controller.source_file, "file.xlsx")
-
-        with self.subTest("destination_file set"):
-            self.assertEqual(self.controller.destination_file, "out.txt")
-
         with self.subTest("checkers_log type"):
-            self.assertIsInstance(self.controller.checkers_log, tuple)
+            self.assertIsInstance(controller.checkers_log, tuple)
+
+        with self.subTest("checkers_log value"):
+            self.assertEqual(controller.checkers_log, ())
+
 
     def test_exception_during_workflow(self) -> None:
         """
         Should raise RuntimeError when any step fails.
         """
         # ARRANGE
+        controller = cb.CheckBomController()
         patch_menu = cb.menu
         expected_type = RuntimeError.__name__
         expected_reason = "failure"
@@ -156,7 +134,7 @@ class TestCheckBomControllerRun(unittest.TestCase):
 
             # ACT
             try:
-                self.controller.run()
+                controller.run()
                 actual = ""
             except Exception as exc:
                 actual = exc

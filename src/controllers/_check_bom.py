@@ -89,7 +89,7 @@ class CheckBomController(base.BaseController):
         self.parsed_model: model.BomV3 | None = None
 
         # Initialize validation log container; expected to be an ordered, immutable sequence of log lines
-        self.checkers_log: tuple[str] | None = None
+        self.checkers_log: tuple[str,...] | None = None
 
     def run(self) -> None:
         """
@@ -179,25 +179,21 @@ class CheckBomController(base.BaseController):
                 self.checkers_log
             )
 
-            # Transform log lines into tabular structure for Excel export
+            # Transform log lines into tabular structure
             # Each line is split on "|" which is assumed to be a stable delimiter invariant from checker output
             # Replacement to "\t" ensures consistent splitting even if delimiter handling changes upstream
             # TODO - logs should be structured data. And then use 'to_console' and 'to_log' methods to separate presentation from data. This is a temporary workaround to get the data into Excel until the logs are properly structured.
-            log_rows = [
-                line.replace("|", "\t").split("\t")
+            log_rows: tuple[str,...] = tuple(
+                line.replace("|", "\t")
                 for line in self.checkers_log
-            ]
-
-            # Construct DataFrame from normalized rows; no header enforcement
-            df_log = pd.DataFrame(log_rows)
+            )
 
             # Export log as an Excel sheet; overwrite ensures deterministic output without residual files
-            exporter.write_excel_sheets(
+            exporter.write_text_file_lines(
                 folder=self.destination_folder,
                 file_name=self.destination_file,
-                sheets={"log": df_log},
+                lines=log_rows,
                 overwrite=True,
-                top_row_is_header=False,
             )
 
         except Exception as exc:
