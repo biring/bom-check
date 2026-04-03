@@ -109,6 +109,24 @@ class TestBaseController(unittest.TestCase):
             with self.subTest("Message contains reason"):
                 self.assertIn(expected_reason, actual_message)
 
+    def test_duplicate_registration(self) -> None:
+        """
+        Should not register subclass more than once.
+        """
+        # ARRANGE
+        with patch.object(bc.BaseController, "registry", []):
+            class ValidController(bc.BaseController):
+                name = "valid"
+                description = "valid controller"
+
+        # ACT
+        ValidController.__init_subclass__()
+        occurrences = bc.BaseController.registry.count(ValidController)
+
+        # ASSERT
+        with self.subTest("Single registration"):
+            self.assertEqual(occurrences, 1)
+
     def test_run(self) -> None:
         """
         Should raise NotImplementedError when called directly.

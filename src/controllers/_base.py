@@ -96,7 +96,8 @@ class BaseController:
 
         # Register the validated subclass for later lookup or enumeration
         # Assumes subclasses are defined once and not dynamically redefined
-        BaseController.registry.append(cls)
+        if cls not in BaseController.registry:
+            BaseController.registry.append(cls)
 
     def __init__(self):
         """
