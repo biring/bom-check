@@ -101,6 +101,7 @@ BUILD_STAGE_GOOD: Final[list[str]] = [
     "MB",  # MB exact
     "MP",  # MP exact
     "FOT",  # FOT exact
+    "TRA", # TRA exact
     "ECN",  # ECN with no digits (allowed)
     "ECN1",  # ECN with digits
     "ECN123",  # ECN with multiple digits
@@ -115,6 +116,7 @@ BUILD_STAGE_BAD: Final[list[str]] = [
     "MP1",  # MP must be exact
     "MB2",  # MB must be exact
     "FOT1",  # FOT must be exact
+    "TRA1", # TRA must be exact
     "",  # empty string
     " ",  # whitespace only
     "PX1",  # invalid prefix

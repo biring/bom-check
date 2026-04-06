@@ -59,9 +59,9 @@ BOARD_SUPPLIER_RULE: str = (
 
 BOARD_SUPPLIER_PATTERN = re.compile(r'^[A-Z][A-Za-z0-9 ]{2,}$')
 
-BUILD_STAGE_RULE: str = "Correct '{a}' formats are Pn, Pn.n, EBn, EBn.n, MB, MP, ECN, ECNn, or FOT."
+BUILD_STAGE_RULE: str = "Correct '{a}' formats are Pn, Pn.n, EBn, EBn.n, MB, MP, ECN, ECNn, TRA, or FOT."
 
-BUILD_STAGE_PATTERN = re.compile(r'^(?:P\d+(?:\.\d+)?|EB\d+(?:\.\d+)?|ECN\d*|MP|MB|FOT)$')
+BUILD_STAGE_PATTERN = re.compile(r'^(?:P\d+(?:\.\d+)?|EB\d+(?:\.\d+)?|ECN\d*|MP|MB|TRA|FOT)$')
 
 COST_RULE: str = "Correct '{a}' is a positive number"
 

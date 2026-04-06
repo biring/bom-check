@@ -115,12 +115,6 @@ def build_stage(value: str) -> None:
     """
     Validate that the input string is a valid build stage label.
 
-    Accepted formats include (case-sensitive):
-      - "Pn" or "Pn.n" (e.g., "P1", "P2.1")
-      - "EBn" or "EBn.n" (e.g., "EB0", "EB1.2")
-      - "ECN" or "ECNn" (e.g., "ECN", "ECN2")
-      - "MB", "MP", or "FOT"
-
     Args:
         value (str): The candidate build stage string.
 
