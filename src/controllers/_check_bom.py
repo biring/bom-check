@@ -50,6 +50,7 @@ from . import _base as base
 _INPUT_DATA_FOLDER: str = "Select the source data folder"
 _INPUT_FILE_SELECTOR: str = "Select the Bill of Material excel file to clean"
 _OUTPUT_DATA_FOLDER: str = "Select the destination data folder"
+_EMPTY_CHECKERS_LOG_MESSAGE: tuple[str, ...] = ("No issues logged.",)
 
 class CheckBomController(base.BaseController):
 
@@ -151,6 +152,10 @@ class CheckBomController(base.BaseController):
             # Execute validation checks and collect log output
             # Invariant: returned log is ordered and represents deterministic validation output
             self.checkers_log = checker.check_v3_bom(self.parsed_model)
+
+            # Ensure the log is never empty to avoid ambiguity in downstream outputs.
+            if self.checkers_log is None or len(self.checkers_log) == 0:
+                self.checkers_log = _EMPTY_CHECKERS_LOG_MESSAGE
 
             # Resolve destination folder using cached value as default
             cached_destination_folder = self.temp_settings_cache.get_value(

@@ -113,7 +113,7 @@ class TestCheckBomController(unittest.TestCase):
             self.assertIsInstance(controller.checkers_log, tuple)
 
         with self.subTest("checkers_log value"):
-            self.assertEqual(controller.checkers_log, ())
+            self.assertEqual(controller.checkers_log, cb._EMPTY_CHECKERS_LOG_MESSAGE)
 
 
     def test_exception_during_workflow(self) -> None:
