@@ -140,26 +140,12 @@ class CleanBomController(base.BaseController):
             RuntimeError: If any stage of the workflow fails.
         """
         try:
-            # Prompt user to select the source folder, using the cached folder as the default start path.
-            self.source_folder = menu.folder_selector(
-                start_path=self.temp_settings_cache.get_value(
-                    key=self.temp_setting_keys.SOURCE_FILES_FOLDER,
-                    expected=str
-                ),
-                menu_title=_INPUT_DATA_FOLDER,
-                menu_prompt=None,
+            # Resolve source data folder
+            self.source_folder = self.get_folder(
+                settings_key=self.temp_setting_keys.SOURCE_FILES_FOLDER,
+                dialog_title=_INPUT_DATA_FOLDER,
+                dialog_prompt=None,
             )
-
-            # Cache the selected source folder if it is not the same object as the cached value.
-            # This preserves the original identity-based comparison behavior even if it is unusual for strings.
-            if self.source_folder is not self.temp_settings_cache.get_value(
-                key=self.temp_setting_keys.SOURCE_FILES_FOLDER,
-                expected=str
-            ):
-                self.temp_settings_cache.update_value(
-                    key=self.temp_setting_keys.SOURCE_FILES_FOLDER,
-                    value=self.source_folder
-                )
 
             # Prompt user to select the source BOM Excel file within the chosen folder.
             self.source_file = menu.file_selector(
@@ -207,25 +193,12 @@ class CleanBomController(base.BaseController):
                     template_df=self.v3_bom_template,
                 )
 
-            # Prompt user to select the destination folder, using the cached folder as the default start path.
-            self.destination_folder = menu.folder_selector(
-                start_path=self.temp_settings_cache.get_value(
-                    key=self.temp_setting_keys.DESTINATION_FILES_FOLDER,
-                    expected=str),
-                menu_title=_OUTPUT_DATA_FOLDER,
-                menu_prompt=None,
+            # Resolve destination folder
+            self.destination_folder = self.get_folder(
+                settings_key=self.temp_setting_keys.DESTINATION_FILES_FOLDER,
+                dialog_title=_OUTPUT_DATA_FOLDER,
+                dialog_prompt=None,
             )
-
-            # Cache the selected destination folder if it is not the same object as the cached value.
-            # This preserves the original identity-based comparison behavior even if it is unusual for strings.
-            if self.destination_folder is not self.temp_settings_cache.get_value(
-                key=self.temp_setting_keys.DESTINATION_FILES_FOLDER,
-                expected=str
-            ):
-                self.temp_settings_cache.update_value(
-                    key=self.temp_setting_keys.DESTINATION_FILES_FOLDER,
-                    value=self.destination_folder
-                )
 
             # Build the destination filename from parsed BOM metadata.
             # This assumes self.parsed_bom exists, which is only guaranteed if the V3 branch executed successfully.

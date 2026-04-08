@@ -111,26 +111,12 @@ class CheckBomController(base.BaseController):
             RuntimeError: If any step in the workflow fails.
         """
         try:
-            # Resolve source folder using cached value as the default starting point
-            # Invariant: temp_settings_cache must return a valid string path or compatible default
-            cached_source_folder = self.temp_settings_cache.get_value(
-                key=self.temp_setting_keys.SOURCE_FILES_FOLDER,
-                expected=str
+            # Resolve source data folder
+            self.source_folder = self.get_folder(
+                settings_key=self.temp_setting_keys.SOURCE_FILES_FOLDER,
+                dialog_title=_INPUT_DATA_FOLDER,
+                dialog_prompt=None,
             )
-
-            self.source_folder = menu.folder_selector(
-                start_path=cached_source_folder,
-                menu_title=_INPUT_DATA_FOLDER,
-                menu_prompt=None,
-            )
-
-            # Persist new source folder only if the value has changed
-            # Equality comparison is used to ensure semantic comparison rather than object identity
-            if self.source_folder != cached_source_folder:
-                self.temp_settings_cache.update_value(
-                    key=self.temp_setting_keys.SOURCE_FILES_FOLDER,
-                    value=self.source_folder,
-                )
 
             # Resolve source file constrained to supported Excel file types
             # Assumption: folder_selector returned a valid accessible directory
@@ -157,24 +143,12 @@ class CheckBomController(base.BaseController):
             if self.checkers_log is None or len(self.checkers_log) == 0:
                 self.checkers_log = _EMPTY_CHECKERS_LOG_MESSAGE
 
-            # Resolve destination folder using cached value as default
-            cached_destination_folder = self.temp_settings_cache.get_value(
-                key=self.temp_setting_keys.DESTINATION_FILES_FOLDER,
-                expected=str
+            # Resolve destination folder
+            self.destination_folder = self.get_folder(
+                settings_key=self.temp_setting_keys.DESTINATION_FILES_FOLDER,
+                dialog_title=_OUTPUT_DATA_FOLDER,
+                dialog_prompt=None,
             )
-
-            self.destination_folder = menu.folder_selector(
-                start_path=cached_destination_folder,
-                menu_title=_OUTPUT_DATA_FOLDER,
-                menu_prompt=None,
-            )
-
-            # Persist new destination folder only if changed
-            if self.destination_folder != cached_destination_folder:
-                self.temp_settings_cache.update_value(
-                    key=self.temp_setting_keys.DESTINATION_FILES_FOLDER,
-                    value=self.destination_folder
-                )
 
             # Build output filename based on parsed model metadata
             # Assumption: parsed_model contains sufficient metadata for deterministic naming
