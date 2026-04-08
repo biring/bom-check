@@ -37,8 +37,11 @@ from __future__ import annotations
 __all__ = []  # Internal-only module; explicitly exports nothing to prevent accidental public use.
 
 from dataclasses import dataclass
+
 from src.settings import temporary
+
 from src.lookups import interfaces as lookup
+from src.menus import interfaces as menu
 
 class BaseController:
     """
@@ -71,7 +74,7 @@ class BaseController:
         Register subclasses and enforce required metadata attributes.
 
         This hook runs automatically when a subclass is defined. It ensures that all concrete subclasses define
-        NAME and DESCRIPTION, and registers them in the global REGISTRY for later discovery.
+        name and description, and registers them in the global REGISTRY for later discovery.
 
         Args:
             **kwargs: Arbitrary keyword arguments passed to superclass implementation.
@@ -80,7 +83,7 @@ class BaseController:
             None
 
         Raises:
-            TypeError: If a subclass does not define NAME or DESCRIPTION.
+            TypeError: If a subclass does not define name or description.
         """
         # Delegate to parent implementation to preserve Python's subclass initialization chain
         super().__init_subclass__(**kwargs)
@@ -158,6 +161,51 @@ class BaseController:
             "BaseController run() is not implemented. "
             "Subclasses must override this method to provide specific workflow logic."
         )
+
+    def get_folder(self, *, settings_key: str, dialog_title: str | None, dialog_prompt: str | None) -> str:
+        """
+        Resolve and optionally persist a folder path using cached settings and user input.
+
+        This method retrieves a previously stored folder path from temporary settings and uses it as the default
+        starting location for a folder selection prompt. If the user selects a different folder, the new value is
+        persisted back to the settings cache.
+
+        Args:
+            settings_key (str): Key used to retrieve and store the folder path in temporary settings.
+            dialog_title (str | None): Title displayed in the folder selection menu.
+            dialog_prompt (str | None): Prompt message displayed in the folder selection menu.
+
+        Returns:
+            str: The selected folder path.
+
+        Raises:
+            Any: Propagates exceptions raised by the settings cache or menu interface.
+        """
+        # Retrieve cached folder path to provide a default starting location for the user
+        # Invariant: returned value should be a string or compatible default as enforced by the cache interface
+        cached_folder = self.temp_settings_cache.get_value(
+            key=settings_key,
+            expected=str
+        )
+
+        # Invoke folder selection UI using cached value as the starting path
+        # Assumption: menu interface handles user interaction and returns a valid path string
+        selected_folder = menu.folder_selector(
+            start_path=cached_folder,
+            menu_title=dialog_title,
+            menu_prompt=dialog_prompt,
+        )
+
+        # Persist updated value only when it differs to avoid unnecessary writes and preserve idempotency
+        # Equality comparison ensures semantic comparison rather than identity comparison
+        if selected_folder != cached_folder:
+            self.temp_settings_cache.update_value(
+                key=settings_key,
+                value=selected_folder,
+            )
+
+        # Return the resolved folder path regardless of whether it changed
+        return selected_folder
 
 @dataclass(frozen=True)
 class ControllerSpec:

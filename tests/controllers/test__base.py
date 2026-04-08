@@ -1,7 +1,7 @@
 """
-Validate initialization behavior, dependency failure handling, execution contract enforcement, and immutable specification storage for a controller abstraction.
+Validate initialization, subclass registration, execution contract enforcement, folder selection caching behavior, and immutable specification storage for a controller abstraction.
 
-This module contains unit tests that verify that controller initialization correctly assigns externally provided resources without transformation, that initialization failures are surfaced as runtime errors with preserved context, that the execution entry point enforces an abstract contract by raising an error when not implemented, and that a separate immutable specification object stores provided metadata and class references accurately.
+This module contains unit tests that verify initialization assigns externally provided dependencies by identity, that initialization failures are surfaced as runtime errors with preserved context, that subclass registration occurs exactly once and enforces required metadata, that the execution entry point raises an error when not implemented, that folder selection updates cached values only when changed, and that an immutable specification object stores provided metadata and class references accurately. :contentReference[oaicite:0]{index=0}
 
 Example Usage:
 	# Preferred usage via project-root invocation:
@@ -12,26 +12,27 @@ Example Usage:
 
 Test Data and Fixtures:
 	- Uses unittest.mock.patch to replace external dependency functions and attributes with controlled return values and exceptions.
-	- Constructs in-memory objects and dictionaries to simulate caches, key sets, and lookup tables.
-	- Instantiates objects directly without filesystem or network interaction.
-	- Relies on context-managed patching to ensure automatic restoration of original state after each test.
+	- Constructs in-memory objects and mock instances to simulate caches and lookup data.
+	- Instantiates objects directly and, where needed, bypasses initialization to inject controlled state.
+	- Relies on context-managed patching to ensure automatic restoration after each test.
 
 Dependencies:
 	- Python 3.10+
 	- Standard Library: unittest, unittest.mock
 
 Notes:
-	- Assertions verify object identity for injected dependencies, ensuring direct assignment rather than copying or transformation.
-	- Failure scenarios validate both exception type and that the resulting message is non-empty and includes the original error reason.
-	- Execution contract enforcement is validated by confirming an error is raised when the entry point is invoked without an override.
-	- Tests are deterministic and hermetic due to complete control over external dependencies via mocking.
+	- Assertions verify object identity for injected dependencies, ensuring no copying or transformation occurs.
+	- Failure scenarios validate exception type and that error messages are non-empty and include the originating reason when provided.
+	- Subclass registration tests confirm idempotent registration and enforce presence of required metadata at class definition time.
+	- Folder selection behavior is validated by comparing cached and selected values and asserting conditional cache updates.
+	- Tests are deterministic and hermetic through use of mocking and in-memory constructs without filesystem or network interaction.
 
 License:
 	Internal Use Only
 """
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 
 # noinspection PyProtectedMember
 from src.controllers import _base as bc
@@ -96,7 +97,7 @@ class TestBaseController(unittest.TestCase):
                 actual = exc
 
         # ASSERT
-        actual_type = type(actual).__name__
+        actual_type = type(actual).__name__ # noqa
         with self.subTest("Error", Exp=expected_type, Act=actual_type):
             self.assertEqual(expected_type, actual_type)
 
@@ -127,6 +128,31 @@ class TestBaseController(unittest.TestCase):
         with self.subTest("Single registration"):
             self.assertEqual(occurrences, 1)
 
+    def test_missing_metadata(self) -> None:
+        """
+        Should raise when metadata is missing.
+        """
+        # ARRANGE
+        expected_type = TypeError.__name__
+
+        # ACT
+        try:
+            class InvalidController(bc.BaseController): # noqa
+                name = None
+                description = None
+            actual = ""
+        except Exception as exc:
+            actual = exc
+
+        # ASSERT
+        actual_type = type(actual).__name__ # noqa
+        with self.subTest("Error", Exp=expected_type, Act=actual_type):
+            self.assertEqual(expected_type, actual_type)
+
+        actual_args = getattr(actual, "args", ())
+        with self.subTest("Message string is not empty"):
+            self.assertTrue(bool(actual_args) and str(actual_args[0]) != "")
+
     def test_run(self) -> None:
         """
         Should raise NotImplementedError when called directly.
@@ -139,17 +165,82 @@ class TestBaseController(unittest.TestCase):
         try:
             controller.run()
             actual = ""
-        except Exception as e:
-            actual = e
+        except Exception as exc:
+            actual = exc
 
         # ASSERT
-        actual_type = type(actual).__name__
+        actual_type = type(actual).__name__ # noqa
         with self.subTest("Error", Exp=expected_type, Act=actual_type):
             self.assertEqual(expected_type, actual_type)
 
         actual_args = getattr(actual, "args", ())
         with self.subTest("Message string is not empty"):
             self.assertTrue(bool(actual_args) and str(actual_args[0]) != "")
+
+    def test_get_folder_with_cache_update(self) -> None:
+        """
+        Should return selected folder and update cache when value changes.
+        """
+        # ARRANGE
+        controller = bc.BaseController.__new__(bc.BaseController)
+        old_value = "/old"
+        new_value = "/new"
+
+        mock_cache = Mock()
+        mock_cache.get_value.return_value = old_value
+        mock_cache.update_value = Mock()
+
+        controller.temp_settings_cache = mock_cache
+
+        patch_file_menu = bc.menu
+        patch_function_menu = patch_file_menu.folder_selector.__name__
+
+        with patch.object(patch_file_menu, patch_function_menu, return_value=new_value):
+            # ACT
+            result = controller.get_folder(
+                settings_key="key",
+                dialog_title="title",
+                dialog_prompt="prompt",
+            )
+
+            # ASSERT
+            with self.subTest("Return value"):
+                self.assertEqual(result, new_value)
+
+            with self.subTest("Update called"):
+                self.assertTrue(mock_cache.update_value.called)
+
+    def test_get_folder_with_no_cache_update(self) -> None:
+        """
+        Should not update cache when selected folder matches cached value.
+        """
+        # ARRANGE
+        controller = bc.BaseController.__new__(bc.BaseController)
+        cached_value = "/same"
+
+        mock_cache = Mock()
+        mock_cache.get_value.return_value = cached_value
+        mock_cache.update_value = Mock()
+
+        controller.temp_settings_cache = mock_cache
+
+        patch_file_menu = bc.menu
+        patch_function_menu = patch_file_menu.folder_selector.__name__
+
+        with patch.object(patch_file_menu, patch_function_menu, return_value=cached_value):
+            # ACT
+            result = controller.get_folder(
+                settings_key="key",
+                dialog_title=None,
+                dialog_prompt=None,
+            )
+
+            # ASSERT
+            with self.subTest("Return value"):
+                self.assertEqual(result, cached_value)
+
+            with self.subTest("Update not called"):
+                self.assertFalse(mock_cache.update_value.called)
 
 class TestControllerSpec(unittest.TestCase):
     """
