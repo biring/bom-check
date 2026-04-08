@@ -28,19 +28,37 @@ Notes:
 License:
 	Internal Use Only
 """
-
+import os
+import shutil
+import tempfile
 import unittest
 from unittest.mock import patch
 
 # noinspection PyProtectedMember
 from src.controllers import _clean_bom as cb
-
+from src.utils import excel_io as eio
 from tests.fixtures import v3_df as bfx
 
 class TestCleanBomController(unittest.TestCase):
     """
-    Unit tests for CleanBomController class.
+    Unit tests verifying CleanBomController initialization and workflow execution.
     """
+
+    def setUp(self) -> None:
+        """
+        Create temporary directory for test data.
+        """
+        self.test_folder_path = tempfile.mkdtemp(prefix="bom_clean_test_")
+        self.test_file_name = "sample_bom"
+        self.test_file_path = os.path.join(self.test_folder_path, self.test_file_name + ".xlsx")
+
+    def tearDown(self) -> None:
+        """
+        Clean up temporary directory.
+        """
+        if os.path.exists(self.test_folder_path):
+            shutil.rmtree(self.test_folder_path)
+
     def test_init(self) -> None:
         """
         Should initialize all attributes to their default state.
@@ -86,23 +104,35 @@ class TestCleanBomController(unittest.TestCase):
         Should execute the workflow and populate controller state.
         """
         # ARRANGE
-        source_bom = bfx.BOM_B_DATAFRAME
-        patched_path = "some_path"
-        patched_file_name = "some_file"
+        clean_bom_sheets = bfx.BOM_B_DATAFRAME
+        eio.write_sheets_to_excel(
+            file_path=self.test_file_path,
+            frames_by_sheet=clean_bom_sheets,
+            overwrite=True,
+            add_header_to_top_row=False,
+        )
+
         controller = cb.CleanBomController()
 
         patch_cache = controller.temp_settings_cache
         patch_menu = cb.menu
-        patch_importer = cb.importer
-        patch_exporter = cb.exporter
 
         with (
-            patch.object(patch_cache, patch_cache.get_value.__name__, return_value=[patched_path, patched_path, patched_path, patched_path]),
-            patch.object(patch_menu, patch_menu.folder_selector.__name__, side_effect=[patched_path, patched_path]),
-            patch.object(patch_menu, patch_menu.file_selector.__name__, return_value=patched_file_name),
-            patch.object(patch_importer, patch_importer.read_excel_as_dict.__name__, return_value=source_bom),
-            patch.object(patch_exporter, patch_exporter.build_checker_log_filename.__name__, return_value=patched_file_name),
-            patch.object(patch_exporter, patch_exporter.write_excel_sheets.__name__, return_value=None)
+            patch.object(
+                target=patch_cache,
+                attribute=patch_cache.get_value.__name__,
+                return_value=self.test_folder_path
+            ),
+            patch.object(
+                target=patch_menu,
+                attribute=patch_menu.folder_selector.__name__,
+                return_value=self.test_folder_path
+            ),
+            patch.object(
+                target=patch_menu,
+                attribute=patch_menu.file_selector.__name__,
+                return_value=self.test_file_name + ".xlsx"
+            ),
         ):
 
             # ACT
@@ -118,7 +148,7 @@ class TestCleanBomController(unittest.TestCase):
             self.assertEqual(len(controller.cleaner_log), 0)
 
         # Verify bom
-        expected = source_bom
+        expected = clean_bom_sheets
         actual = controller.output_sheets
 
         with self.subTest("Bom count", Exp=len(expected), Act=len(actual)):
