@@ -154,27 +154,11 @@ class CheckBomController(base.BaseController):
             # Assumption: parsed_model contains sufficient metadata for deterministic naming
             self.destination_file = exporter.build_checker_log_filename(self.parsed_model)
 
-            # Write validation log as plain text lines
-            exporter.write_text_file_lines(
-                self.destination_folder,
-                self.destination_file,
-                self.checkers_log
-            )
-
-            # Transform log lines into tabular structure
-            # Each line is split on "|" which is assumed to be a stable delimiter invariant from checker output
-            # Replacement to "\t" ensures consistent splitting even if delimiter handling changes upstream
-            # TODO - logs should be structured data. And then use 'to_console' and 'to_log' methods to separate presentation from data. This is a temporary workaround to get the data into Excel until the logs are properly structured.
-            log_rows: tuple[str,...] = tuple(
-                line.replace("|", "\t")
-                for line in self.checkers_log
-            )
-
             # Export log as an Excel sheet; overwrite ensures deterministic output without residual files
             exporter.write_text_file_lines(
                 folder=self.destination_folder,
                 file_name=self.destination_file,
-                lines=log_rows,
+                lines=self.checkers_log,
                 overwrite=True,
             )
 
