@@ -1,7 +1,13 @@
 """
-ChangeLog component for recording human-readable change events across (module, file, sheet, section) contexts.
+Change log utility for recording human-readable change events across contextual scopes.
 
-This module provides a lightweight stateful object used across parsing, cleaning, fixing, and reporting stages to accumulate text entries and render them as flat, context-rich report rows.
+This module provides a lightweight stateful mechanism for accumulating text-based change entries and rendering them as flat, context-rich rows suitable for reporting and downstream inspection.
+
+Key Responsibilities:
+	- Maintain contextual metadata for module, file, sheet, and section scopes
+	- Accumulate ordered change messages with captured context at insertion time
+	- Filter out empty or whitespace-only messages
+	- Render entries as flat, tab-separated rows for reporting
 
 Example Usage:
     # Preferred usage via package interface:
@@ -10,42 +16,47 @@ Example Usage:
     log.set_section_name("Row:4")
     log.add_entry("Invalid Quantity")
 
-    # Direct internal usage (acceptable for tests or internal scripts only):
-    from src.common._change_log import ChangeLog
-    log = ChangeLog()
-    log.set_section_name("Items")
-    log.add_entry("Collapsed whitespace")
+	# Direct module usage (acceptable in unit tests or internal scripts only):
+	from src.common._change_log import ChangeLog
+	log = ChangeLog()
+	log.set_section_name("Items")
+	log.add_entry("Collapsed whitespace")
 
 Dependencies:
-    - Python >= 3.10
-    - Standard Library: typing
+	- Python version: >= 3.10
+	- Standard Library: typing
 
 Notes:
-    - Context values apply at render time; entries do not store their own context.
-    - Empty or whitespace-only messages are ignored.
-    - Internal-only module; ChangeLog is publicly exposed via the package __init__.
+	- Context is captured at insertion time and not dynamically resolved during rendering
+	- Entries preserve insertion order for chronological accuracy
+	- Messages are stored without modification except for emptiness checks
+	- Intended for internal use and exposed externally via a package-level interface
 
 License:
-    - Internal Use Only
+	- Internal Use Only
 """
+__all__ = []  # Internal-only module; explicitly exports nothing to prevent accidental public use.
 
-__all__ = []  # Internal-only; not part of public API.
-
+LOG_RENDER_SEPARATOR = "\t"
 
 class ChangeLog:
     """
     Accumulate change messages under a shared (module, file, sheet, section) context.
 
-    Stores lightweight text events and can render them as flat rows for reporting.
+    Stores lightweight text events and renders them as flat rows. Context is not stored per-entry; instead,
+    the active context at the time of insertion is captured into each entry tuple.
 
-    Args:
-        self
+    Invariants:
+        - Context fields (_module_name, _file_name, _sheet_name, _section_name) are always strings.
+        - _entries preserves insertion order.
+        - Each entry is a 5-tuple of (module, file, sheet, section, message).
 
-    Returns:
-        None
-
-    Raises:
-        None
+    Attributes:
+        _module_name (str): Current module context.
+        _file_name (str): Current file context.
+        _sheet_name (str): Current sheet context.
+        _section_name (str): Current section context.
+        _entries (list[tuple[str, ...]]): Accumulated entries.
     """
 
     def __init__(self) -> None:
@@ -57,15 +68,15 @@ class ChangeLog:
 
         Returns:
             None
-
-        Raises:
-            None
         """
+        # Initialize all context fields as empty strings to avoid None handling downstream
         self._module_name = ""
         self._file_name = ""
         self._sheet_name = ""
         self._section_name = ""
-        self._entries: list[str] = []
+
+        # Maintain insertion-ordered list of entry tuples; each tuple captures context at insertion time
+        self._entries: list[tuple[str, ...]] = []
 
     def set_module_name(self, module: str) -> None:
         """
@@ -77,6 +88,7 @@ class ChangeLog:
         Returns:
             None
         """
+        # Direct assignment; no normalization or validation is enforced
         self._module_name = module
 
     def set_file_name(self, file: str) -> None:
@@ -89,6 +101,7 @@ class ChangeLog:
         Returns:
             None
         """
+        # Direct assignment; caller is responsible for providing meaningful file identifiers
         self._file_name = file
 
     def set_sheet_name(self, sheet: str) -> None:
@@ -101,6 +114,7 @@ class ChangeLog:
         Returns:
             None
         """
+        # Direct assignment; no trimming or validation applied
         self._sheet_name = sheet
 
     def set_section_name(self, section: str) -> None:
@@ -113,13 +127,15 @@ class ChangeLog:
         Returns:
             None
         """
+        # Direct assignment; section names are treated as opaque identifiers
         self._section_name = section
 
     def add_entry(self, message: str) -> None:
         """
         Append a single message under the current context.
 
-        Entries are added as a flat rows: "module | file | sheet | section | message". Skips empty or whitespace-only messages.
+        Strips the message to determine emptiness but preserves the original message string in storage.
+        Empty or whitespace-only messages are ignored.
 
         Args:
             message (str): Human-readable description of the change.
@@ -127,22 +143,27 @@ class ChangeLog:
         Returns:
             None
         """
+        # Normalize message for emptiness check without mutating original content
         entry = message.strip()
+
+        # Enforce invariant: do not store empty or whitespace-only entries
         if entry:
-            # Flatten messages to "module | file | sheet | section | message"
-            msg_format = "{a} | {b} | {c} | {d} | {e}"
-            msg = msg_format.format(
-                a=self._module_name,
-                b=self._file_name,
-                c=self._sheet_name,
-                d=self._section_name,
-                e=entry
+            # Capture current context at insertion time; context is not dynamically resolved later
+            self._entries.append(
+                (
+                    self._module_name,
+                    self._file_name,
+                    self._sheet_name,
+                    self._section_name,
+                    message,  # Preserve original message (including internal spacing)
+                )
             )
-            self._entries.append(msg)
 
     def render(self) -> tuple[str, ...]:
         """
-        Render all entries as flat context-rich rows.
+        Render all entries as flat tab-separated rows.
+
+        Concatenates each entry tuple into a string using LOG_RENDER_SEPARATOR and strips trailing whitespace.
 
         Args:
             self
@@ -150,4 +171,20 @@ class ChangeLog:
         Returns:
             tuple[str, ...]: One formatted row per entry, in insertion order.
         """
-        return tuple(self._entries)
+        # Accumulate rendered rows; list used for efficient append operations before tuple conversion
+        rendered_string_list: list[str] = []
+
+        # Iterate in insertion order to preserve chronological event sequence
+        for entry in self._entries:
+            row: str = ""
+
+            # Build row manually to preserve exact separator semantics and ordering
+            for item in entry:
+                # Append each field followed by separator; trailing separator removed via strip()
+                row += item + LOG_RENDER_SEPARATOR
+
+            # Strip trailing separator and any incidental whitespace
+            rendered_string_list.append(row.strip())
+
+        # Return immutable tuple to prevent accidental external mutation
+        return tuple(rendered_string_list)
