@@ -34,12 +34,20 @@ License:
 """
 __all__ = []  # Internal-only; not part of public API. Star import from this module gets nothing.
 
+from dataclasses import dataclass
+from enum import StrEnum
+
 from ._dependencies import model
 from ._dependencies import timestamp
 
+@dataclass(frozen=True)
+class LogTypes(StrEnum):
+    CHECKER = "CheckerLog"
+    FIXER = "FixerLog"
+    CLEANER = "CleanerLog"
+
 FILE_NAME_SEPARATOR = "-"
 SUFFIX_CHECKER_LOG = 'CheckerLog'
-
 
 def _extract_board_name(bom: model.BomV3) -> str | None:
     """
@@ -143,7 +151,7 @@ def build_checker_log_filename(bom: model.BomV3) -> str:
             f"\n{ex!r}"
         ) from ex
 
-def generate_timestamped_log_filename(log_type_suffix: str) -> str:
+def generate_log_filename(log_type: LogTypes) -> str:
     """
     Build a standardized log filename using timestamp components and a log type suffix.
 
@@ -151,7 +159,7 @@ def generate_timestamped_log_filename(log_type_suffix: str) -> str:
     filenames remain meaningful and distinguishable.
 
     Args:
-        log_type_suffix (str): Identifier describing the log type.
+        log_type (LogTypes): Identifier describing the log type.
 
     Returns:
         str: A timestamp-based log filename.
@@ -160,30 +168,35 @@ def generate_timestamped_log_filename(log_type_suffix: str) -> str:
         RuntimeError: If validation fails or an unexpected error occurs.
     """
     try:
-        # Enforce minimum length invariant to avoid trivial or meaningless filenames
+        # Resolve enum value to obtain the string suffix
+        log_suffix = log_type.value
+
+        # Enforce invariant: suffix must be sufficiently descriptive
         minimum_log_type_length = 3
-        if len(log_type_suffix) <= minimum_log_type_length:
-            # Validation failure: log type must be sufficiently descriptive
-            raise ValueError(f"Log file type must be longer than {minimum_log_type_length} characters.")
+        if len(log_suffix) <= minimum_log_type_length:
+            # Validation failure: prevents meaningless or overly short filenames
+            raise ValueError(
+                f"Log file type must be longer than {minimum_log_type_length} characters."
+            )
 
         # Compose filename using date and time to ensure uniqueness
         return (
-                timestamp.now_local_date()
-                + FILE_NAME_SEPARATOR
-                + timestamp.now_local_time()
-                + FILE_NAME_SEPARATOR
-                + log_type_suffix
+            timestamp.now_local_date()
+            + FILE_NAME_SEPARATOR
+            + timestamp.now_local_time()
+            + FILE_NAME_SEPARATOR
+            + log_suffix
         )
 
     except ValueError as ve:
         # Normalize validation errors into consistent RuntimeError for callers
         raise RuntimeError(
-            f"Failed to build '{log_type_suffix}' log filename."
+            f"Failed to build '{log_type}' log type file name."
             f"\n{ve!r}"
         ) from ve
     except Exception as ex:
         # Catch-all for unexpected issues to maintain stable API contract
         raise RuntimeError(
-            f"Unexpected error when building '{log_type_suffix}' log filename."
+            f"Unexpected error when building '{log_type}' log type file name."
             f"\n{ex!r}"
         ) from ex

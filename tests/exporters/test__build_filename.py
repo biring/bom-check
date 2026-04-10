@@ -31,6 +31,8 @@ License:
 	- Internal Use Only
 """
 
+from enum import StrEnum
+
 import unittest
 from unittest.mock import patch
 
@@ -284,8 +286,8 @@ class TestGenerateTimestampedLogFilename(unittest.TestCase):
         # ARRANGE
         date = "250101"
         time = "124526"
-        suffix = "AuditLog"
-        expected = f"{date}{builder.FILE_NAME_SEPARATOR}{time}{builder.FILE_NAME_SEPARATOR}{suffix}"
+        suffix = builder.LogTypes.FIXER
+        expected = f"{date}{builder.FILE_NAME_SEPARATOR}{time}{builder.FILE_NAME_SEPARATOR}{suffix.value}"
 
         patch_file = dep.timestamp
         patch_date = patch_file.now_local_date.__name__
@@ -294,7 +296,7 @@ class TestGenerateTimestampedLogFilename(unittest.TestCase):
         # ACT
         with patch.object(patch_file, patch_date, return_value=date):
             with patch.object(patch_file, patch_time, return_value=time):
-                actual = builder.generate_timestamped_log_filename(suffix)
+                actual = builder.generate_log_filename(suffix)
 
         # ASSERT
         with self.subTest(Out=actual, Exp=expected):
@@ -305,13 +307,16 @@ class TestGenerateTimestampedLogFilename(unittest.TestCase):
         Should raise RuntimeError when suffix is too short.
         """
         # ARRANGE
-        suffix = "ab"
+        class TestTypes(StrEnum):
+            DEBUG = "db"
+
+        suffix = TestTypes.DEBUG  # type: ignore
         expected_type = RuntimeError.__name__
         expected_reason = "characters"
 
         # ACT
         try:
-            builder.generate_timestamped_log_filename(suffix)
+            builder.generate_log_filename(suffix) # type: ignore[arg-type]
             actual = ""
         except Exception as e:
             actual = e
@@ -336,11 +341,11 @@ class TestGenerateTimestampedLogFilename(unittest.TestCase):
         """
         # ARRANGE
         minimum_length = 14 # 6 for date, 6 for time, plus 2 dash
-        suffix = "TestLog"
+        suffix = builder.LogTypes.CLEANER
         expected_length = minimum_length + len(suffix)
 
         # ACT
-        actual = builder.generate_timestamped_log_filename(suffix)
+        actual = builder.generate_log_filename(suffix)
 
         # ASSERT
         actual_length = len(actual)
