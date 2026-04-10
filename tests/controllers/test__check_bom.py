@@ -112,6 +112,8 @@ class TestCheckBomController(unittest.TestCase):
             add_header_to_top_row=False,
         )
 
+        checker_log_file_suffix = cb.exporter.LogTypes.CHECKER.value
+
         controller = cb.CheckBomController()
 
         patch_cache = controller.temp_settings_cache
@@ -144,6 +146,11 @@ class TestCheckBomController(unittest.TestCase):
 
         with self.subTest("checkers_log value"):
             self.assertEqual(controller.checkers_log, cb._EMPTY_CHECKERS_LOG_MESSAGE)
+
+        with self.subTest("checkers_log file write"):
+            self.assertTrue(
+                any(checker_log_file_suffix in file for file in os.listdir(self.test_folder_path))
+            )
 
 
     def test_exception_during_workflow(self) -> None:

@@ -150,9 +150,8 @@ class CheckBomController(base.BaseController):
                 dialog_prompt=None,
             )
 
-            # Build output filename based on parsed model metadata
-            # Assumption: parsed_model contains sufficient metadata for deterministic naming
-            self.destination_file = exporter.build_checker_log_filename(self.parsed_model)
+            # Build checker log filename based on parsed model metadata
+            self.destination_file = exporter.generate_log_filename(exporter.LogTypes.CHECKER)
 
             # Export log as an Excel sheet; overwrite ensures deterministic output without residual files
             exporter.write_text_file_lines(
