@@ -1,38 +1,36 @@
 """
-Internal utilities for building standardized filenames from BOM metadata.
+Internal utilities for constructing deterministic, filesystem-safe filenames from structured metadata.
 
-This module provides internal helpers for composing deterministic, filesystem-safe filenames derived from BOM header fields. It is intended to centralize filename construction logic used across logging, auditing, and pipeline outputs.
+This module centralizes logic for composing standardized filenames derived from structured data and timestamp components, ensuring consistency across logging, auditing, and pipeline outputs.
 
-Filename composition may include:
-    - Local date
-    - Model number
-    - Build stage
-    - Optional board name (single-board BOMs only)
-    - Fixed context-specific suffixes
-
-All whitespace is removed to ensure portability across filesystems.
+Key Responsibilities:
+	- Construct deterministic filenames using structured metadata fields
+	- Extract identifying attributes from structured input data for naming purposes
+	- Generate timestamp-based filenames for log artifacts
+	- Enforce whitespace-free and filesystem-safe naming conventions
+	- Normalize error handling into a consistent runtime exception model
 
 Example Usage:
-    # Preferred usage via public interfaces:
-    # Not applicable; this is an internal module.
+	# Preferred usage via public package interface:
+	Not applicable. This is an internal module and should be accessed via a façade when exposed.
 
-    # Direct module usage (acceptable in unit tests or internal scripts only):
-    from src.exporters import _build_filename as builder
-    name = builder.build_checker_log_filename(bom)
+	# Direct module usage (acceptable in unit tests or internal scripts only):
+	from src.exporters import _build_filename as builder
+	name = builder.generate_timestamped_log_filename(DebugLog)
 
 Dependencies:
-    - Python >= 3.10
-    - Standard Library: None
-    - Internal Packages: src.models.interfaces, src.utils.timestamp
+	- Python version: >= 3.10
+	- Standard Library: None
 
 Notes:
-    - Assumes BOMs contain at least one board.
-    - Header-derived fields are taken from the first board by convention.
-    - Board names are omitted for multi-board BOMs.
-    - New builders must remain deterministic and whitespace-free.
+	- Assumes structured input contains at least one data element for metadata extraction
+	- Uses the first available element as the canonical source for shared attributes
+	- Omits optional attributes when multiple elements are present
+	- Enforces deterministic output to support reproducibility and traceability
+	- All generated filenames are stripped of whitespace for portability
 
 License:
-    - Internal Use Only
+	- Internal Use Only
 """
 __all__ = []  # Internal-only; not part of public API. Star import from this module gets nothing.
 
@@ -142,5 +140,50 @@ def build_checker_log_filename(bom: model.BomV3) -> str:
     except Exception as ex:
         raise RuntimeError(
             f"Unexpected error when building checker log filename."
+            f"\n{ex!r}"
+        ) from ex
+
+def generate_timestamped_log_filename(log_type_suffix: str) -> str:
+    """
+    Build a standardized log filename using timestamp components and a log type suffix.
+
+    This function enforces a minimum length requirement for the log type to ensure
+    filenames remain meaningful and distinguishable.
+
+    Args:
+        log_type_suffix (str): Identifier describing the log type.
+
+    Returns:
+        str: A timestamp-based log filename.
+
+    Raises:
+        RuntimeError: If validation fails or an unexpected error occurs.
+    """
+    try:
+        # Enforce minimum length invariant to avoid trivial or meaningless filenames
+        minimum_log_type_length = 3
+        if len(log_type_suffix) <= minimum_log_type_length:
+            # Validation failure: log type must be sufficiently descriptive
+            raise ValueError(f"Log file type must be longer than {minimum_log_type_length} characters.")
+
+        # Compose filename using date and time to ensure uniqueness
+        return (
+                timestamp.now_local_date()
+                + FILE_NAME_SEPARATOR
+                + timestamp.now_local_time()
+                + FILE_NAME_SEPARATOR
+                + log_type_suffix
+        )
+
+    except ValueError as ve:
+        # Normalize validation errors into consistent RuntimeError for callers
+        raise RuntimeError(
+            f"Failed to build '{log_type_suffix}' log filename."
+            f"\n{ve!r}"
+        ) from ve
+    except Exception as ex:
+        # Catch-all for unexpected issues to maintain stable API contract
+        raise RuntimeError(
+            f"Unexpected error when building '{log_type_suffix}' log filename."
             f"\n{ex!r}"
         ) from ex
