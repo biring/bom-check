@@ -30,7 +30,9 @@ License:
 
 # noinspection PyProtectedMember
 from ._build_filename import (
+    LogTypes,
     build_checker_log_filename,
+    generate_log_filename,
 )
 
 # noinspection PyProtectedMember
@@ -44,7 +46,9 @@ from ._excel_file import (
 )
 
 __all__ = [
+    LogTypes,
     "build_checker_log_filename",
+    generate_log_filename,
     "write_text_file_lines",
     "write_excel_sheets",
 ]

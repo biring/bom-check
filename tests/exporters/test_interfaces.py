@@ -198,5 +198,22 @@ class TestInterfaces(unittest.TestCase):
                 self.assertEqual(actual, expected_exc)
 
 
+    def test_generate_log_filename(self) -> None:
+        """
+        Should return a string filename when provided a valid LogTypes value.
+        """
+        # ARRANGE
+        log_type = exporter.LogTypes.CHECKER
+
+        # ACT
+        result = exporter.generate_log_filename(log_type)
+
+        # ASSERT
+        with self.subTest("Type check"):
+            self.assertIsInstance(result, str)
+
+        with self.subTest("Length check"):
+            self.assertGreater(len(result), 0)
+
 if __name__ == "__main__":
     unittest.main()
