@@ -1,7 +1,7 @@
 """
-Validate initialization and end-to-end workflow behavior of a controller that processes structured spreadsheet data.
+Validate controller initialization and end-to-end BOM cleaning workflow behavior.
 
-This module verifies that the controller initializes with a clean default state and that a full execution path correctly orchestrates external dependencies, updates internal state, and handles error propagation when a dependency fails.
+This module tests that the controller initializes with a clean default state and that executing the workflow processes spreadsheet inputs, produces expected outputs, writes log files, and handles failure scenarios by raising a runtime error with a propagated message.
 
 Example Usage:
 	# Preferred usage via project-root invocation:
@@ -11,23 +11,27 @@ Example Usage:
 	python -m unittest discover -s tests
 
 Test Data and Fixtures:
-	- External dependencies are fully mocked using patching to simulate user input, file I/O, parsing, transformation, and export steps.
-	- No real files or directories are created; all inputs such as folder paths, filenames, and sheet data are synthetic.
-	- Cleanup is implicit as mocks are scoped to context managers and automatically reverted after each test.
+	- Temporary directories are created using filesystem utilities to store input and output files during tests.
+	- Excel files are generated from in-memory tabular data and written to disk for realistic workflow execution.
+	- Synthetic datasets are used to represent both clean and intentionally modified spreadsheet inputs.
+	- External interactions such as user prompts and configuration retrieval are mocked to control execution flow.
+	- Cleanup is performed by removing temporary directories after each test.
 
 Dependencies:
 	- Python 3.10+
-	- Standard Library: unittest, unittest.mock
+	- Standard Library: unittest, unittest.mock, temp file, shutil, os, io
 
 Notes:
-	- The tests assert only state changes and outputs that are explicitly set or returned during execution, avoiding assumptions about underlying implementation.
-	- Workflow execution is validated through controlled mock return values to ensure deterministic behavior.
-	- Error handling is verified by forcing a dependency to raise an exception and asserting that a runtime error with a non-empty message is propagated.
-	- The module relies entirely on mocked integrations, so it does not validate real filesystem, spreadsheet parsing, or data transformation behavior.
+	- Tests verify only observable state changes, returned data, and filesystem side effects such as file creation.
+	- Workflow behavior is exercised end-to-end using real file I/O combined with selective mocking for user interaction.
+	- Deterministic behavior is enforced through controlled inputs and patched dependencies.
+	- Error handling is validated by simulating a dependency failure and asserting that a runtime error is raised with a non-empty message containing the original cause.
 
 License:
 	Internal Use Only
 """
+
+import io
 import os
 import shutil
 import tempfile
@@ -58,6 +62,13 @@ class TestCleanBomController(unittest.TestCase):
         """
         if os.path.exists(self.test_folder_path):
             shutil.rmtree(self.test_folder_path)
+
+    def file_name_has_tag(self, tag: str) -> bool:
+        for file_name in os.listdir(self.test_folder_path):
+            if tag in file_name:
+                return True
+        return False
+
 
     def test_init(self) -> None:
         """
@@ -141,14 +152,132 @@ class TestCleanBomController(unittest.TestCase):
 
         # ASSERT
         with self.subTest("Empty checker log"):
-            self.assertEqual(len(controller.checker_log), 0)
+            self.assertEqual(controller.checker_log, cb._EMPTY_CHECKER_LOG_MESSAGE)
+
+        with self.subTest("Checkers log file write"):
+            self.assertTrue(self.file_name_has_tag(cb.exporter.LogTypes.CHECKER.value))
+
         with self.subTest("Empty fixer log"):
-            self.assertEqual(len(controller.fixer_log), 0)
+            self.assertEqual(controller.fixer_log, cb._EMPTY_FIXER_LOG_MESSAGE)
+
+        with self.subTest("Fixer log file write"):
+            self.assertTrue(self.file_name_has_tag(cb.exporter.LogTypes.FIXER.value))
+
         with self.subTest("Empty cleaner log"):
-            self.assertEqual(len(controller.cleaner_log), 0)
+            self.assertEqual(controller.cleaner_log, cb._EMPTY_CLEANER_LOG_MESSAGE)
+
+        with self.subTest("Cleaner log file write"):
+            self.assertTrue(self.file_name_has_tag(cb.exporter.LogTypes.CLEANER.value))
+
+        with self.subTest("Bom file write"):
+            self.assertTrue(self.file_name_has_tag("BB200"))
 
         # Verify bom
-        expected = clean_bom_sheets
+        expected = clean_bom_sheets # noqa
+        actual = controller.output_sheets
+
+        with self.subTest("Bom count", Exp=len(expected), Act=len(actual)):
+            self.assertEqual(len(expected), len(actual))
+
+        for ((expected_name, expected_df), (actual_name, actual_df)) in zip(expected.items(), actual.items()):
+            with self.subTest(f"Sheet: {expected_name}"):
+                self.assertEqual(expected_name, actual_name)
+
+            expected_df_as_lists = expected_df.fillna("").astype(str).values.tolist()
+            actual_df_as_lists = actual_df.fillna("").astype(str).values.tolist()
+
+            with self.subTest(f"Board: {expected_name}"):
+                self.assertEqual(expected_df_as_lists, actual_df_as_lists)
+
+    def test_cleaning(self) -> None:
+        """
+        Should clean BOM data and generate non-empty logs.
+        """
+        # ARRANGE
+        clean_bom_sheets = bfx.BOM_A_DATAFRAME
+
+        replacements = {
+            r"\b2025-01-12\b": "TBD", # will require manual correction in the header
+            r"\bQFN-8\b": "*QFN-8*", # will require manual correction in the table
+            r"\b2\.4\b": "2.5", # will be autocorrected in the header
+            r"R1,R2": "R1 , R2", # will be autocorrected in the table
+        }
+
+        dirty_bom_sheets = {
+            name: df.replace(replacements, regex=True)
+            for name, df in clean_bom_sheets.items()
+        }
+
+        eio.write_sheets_to_excel(
+            file_path=self.test_file_path,
+            frames_by_sheet=dirty_bom_sheets,
+            overwrite=True,
+            add_header_to_top_row=False,
+        )
+
+        controller = cb.CleanBomController()
+
+        patch_cache = controller.temp_settings_cache
+        patch_menu = cb.menu
+
+        with (
+            patch(
+                target="sys.stdout",
+                new=io.StringIO()
+            ),
+            patch(
+                target="builtins.input",
+                side_effect=["QFN-8", "2025-01-12"]
+            ) as mock_input,
+            patch.object(
+                target=patch_cache,
+                attribute=patch_cache.get_value.__name__,
+                return_value=self.test_folder_path
+            ),
+            patch.object(
+                target=patch_menu,
+                attribute=patch_menu.folder_selector.__name__,
+                return_value=self.test_folder_path
+            ),
+            patch.object(
+                target=patch_menu,
+                attribute=patch_menu.file_selector.__name__,
+                return_value=self.test_file_name + ".xlsx"
+            ),
+        ):
+
+            # ACT
+            actual = controller.run() # noqa
+            print(mock_input.call_args_list)
+
+
+        # ASSERT
+        with self.subTest("Two manual correction promotes"):
+            self.assertEqual(mock_input.call_count, 2)
+
+        with self.subTest("Cleaner log size"):
+            self.assertEqual(len(controller.cleaner_log), 1) # Only Ref des is logged
+
+        with self.subTest("Cleaner log file write"):
+            self.assertTrue(self.file_name_has_tag(cb.exporter.LogTypes.CLEANER.value))
+
+        with self.subTest("Fixer log size"):
+            self.assertEqual(len(controller.fixer_log), 3) # Other 3 changes are logged here
+
+        with self.subTest("Fixer log file write"):
+            self.assertTrue(self.file_name_has_tag(cb.exporter.LogTypes.FIXER.value))
+
+        with self.subTest("Checker log is empty post cleaning"):
+            self.assertEqual(controller.checker_log, cb._EMPTY_CHECKER_LOG_MESSAGE)
+
+        with self.subTest("Checkers log file write"):
+            self.assertTrue(self.file_name_has_tag(cb.exporter.LogTypes.CHECKER.value))
+
+        with self.subTest("Bom file write"):
+            self.assertTrue(self.file_name_has_tag("AB100"))
+
+        # Verify bom
+        expected = clean_bom_sheets # noqa
         actual = controller.output_sheets
 
         with self.subTest("Bom count", Exp=len(expected), Act=len(actual)):
@@ -183,11 +312,11 @@ class TestCleanBomController(unittest.TestCase):
             with patch.object(patch_file, patch_function, side_effect=Exception(expected_reason)):
                 controller.run()
             actual = ""
-        except Exception as e:
-            actual = e
+        except Exception as exc:
+            actual = exc
 
         # ASSERT
-        actual_type = type(actual).__name__
+        actual_type = type(actual).__name__ # noqa
         with self.subTest("Error", Exp=expected_type, Act=actual_type):
             self.assertEqual(expected_type, actual_type)
 
