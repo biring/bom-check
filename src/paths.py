@@ -3,7 +3,7 @@
 import os
 import re
 
-import console
+from cli import interfaces as cli
 
 def set_path_to_excel_file(folder, file):
     path = os.path.join(folder, file)
@@ -66,8 +66,12 @@ def get_path_to_excel_file_in_folder(folder_path):
 
     # get user to make a selection
     header_msg = 'Available Excel files'
-    select_msg = 'Enter the number of the file to open'
-    user_selection = console.get_user_selection(excel_files, header_msg=header_msg, select_msg=select_msg)
+    select_msg = 'Enter the number of the file to open: '
+    user_selection = cli.prompt_menu_selection(
+        menu_items=excel_files,
+        header_msg=header_msg,
+        select_msg=select_msg,
+    )
     # get the file name user selected
     selected_file = excel_files[user_selection]
     # build a path to the file
@@ -135,8 +139,12 @@ def get_selected_excel_file_name(folder_path):
 
     # get user to make a selection
     header_msg = 'Available Excel files'
-    select_msg = 'Enter the number of the file to open'
-    user_selection = console.get_user_selection(excel_files, header_msg=header_msg, select_msg=select_msg)
+    select_msg = 'Enter the number of the file to open: '
+    user_selection = cli.prompt_menu_selection(
+        menu_items=excel_files,
+        header_msg=header_msg,
+        select_msg=select_msg,
+    )
     # get the file name user selected
     selected_file = excel_files[user_selection]
 

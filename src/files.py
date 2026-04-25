@@ -1,6 +1,6 @@
 # manage file data
 
-import console
+from cli import interfaces as cli
 import os
 import pandas as pd
 
@@ -42,8 +42,11 @@ def read_excel_file_data(file_path):
 
     # Get which tab to read
     header_msg = 'available excel sheets'
-    select_msg = 'Enter the number of the sheet to make a selection'
-    user_selection = console.get_user_selection(sheet_names, header_msg=header_msg, select_msg=select_msg)
+    select_msg = 'Enter the number of the sheet to make a selection: '
+    user_selection = cli.prompt_menu_selection(
+        menu_items=sheet_names,
+        header_msg=header_msg, select_msg=select_msg
+    )
     sheet_name = sheet_names[user_selection]
 
     print()
@@ -101,8 +104,12 @@ def get_user_selected_excel_file_sheet(xls) -> pd.DataFrame:
 
     # Get which tab to read
     header_msg = 'available excel sheets'
-    select_msg = 'Enter the number of the sheet to make a selection'
-    user_selection = console.get_user_selection(sheet_names, header_msg=header_msg, select_msg=select_msg)
+    select_msg = 'Enter the number of the sheet to make a selection: '
+    user_selection = cli.prompt_menu_selection(
+        menu_items=sheet_names,
+        header_msg=header_msg,
+        select_msg=select_msg
+    )
     sheet_name = sheet_names[user_selection]
 
     print()

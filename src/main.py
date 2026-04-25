@@ -11,9 +11,8 @@ Usage:
 """
 
 import application
-import console
 import version
-
+from cli import interfaces as cli
 from controllers import interfaces as controller
 
 
@@ -43,8 +42,12 @@ def run_menu() -> bool:
         menu_options = legacy_options + list(options)
         # get user to make a selection
         header_msg = 'main menu'
-        select_msg = 'Enter the number of the menu option to execute'
-        user_selection = console.get_user_selection(menu_options, header_msg=header_msg, select_msg=select_msg)
+        select_msg = 'Enter the number of the menu option to execute: '
+        user_selection = cli.prompt_menu_selection(
+            menu_items=menu_options,
+            header_msg=header_msg,
+            select_msg=select_msg,
+        )
         # run user selection
         if user_selection < len(legacy_options):
             if user_selection == 0:
@@ -101,7 +104,7 @@ def main():
 
     # Exit message
     print()
-    print("Exiting application.")
+    input("\nPress Enter to close application...")
 
 
 if __name__ == "__main__":
