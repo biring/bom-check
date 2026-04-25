@@ -3,5 +3,18 @@
 data 
 **/__pycache__
 
-# Ignore base JSON files in 'tools' used for creating runtime-generated JSONs. Source files do not need to be tracked, as the final versions are stored/tracked in the 'runtime' folder
+# Ignore base JSON files in 'tools' used for creating runtime-generated JSONs.
+# JSON source files do not need to be tracked, as the final versions are stored/tracked in the 'runtime' folder
 tools/**/*.json
+
+# --- PyInstaller build artifacts ---
+# PyInstaller temp/cache folder - not needed after a successful build
+build
+# Final .exe output folder - share via OneDrive/SharePoint or GitHub Releases instead
+dist
+# Auto-generated PyInstaller build recipe - regenerated on every build
+*.spec
+# Intermediate bundled archive - embedded in the .exe
+*.pkg
+# Intermediate compressed Python modules - embedded in the .exe
+*.pyz
