@@ -11,3 +11,6 @@ ntplib==0.4.0
 
 # CLI formatting
 colorama
+
+# To build an executable
+pyinstaller
