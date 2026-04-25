@@ -17,7 +17,7 @@ Expected Project Layout:
     ├── src/
     │   └── main.py
     ├── build/              (created by PyInstaller, cleaned by this script)
-    ├── dist/               (created by PyInstaller, cleaned by this script)
+    ├── dist/
     └── bom-check.spec      (created by PyInstaller, cleaned by this script)
 
 Example Usage:
