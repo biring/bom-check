@@ -1,9 +1,17 @@
-import paths
 import files
 import strings
 import frames
 from src.enumeration import SourceFileType, OutputFileType, BomTempVer
 
+
+# noinspection PyProtectedMember
+from controllers import _base as base # migrating to controller to deprecating paths.py
+
+from src.menus import interfaces as menu
+from src.importers import interfaces as importer
+
+# module constants
+ctrl = base.BaseController()
 
 def sequence_cbom_for_cost_walk() -> None:
 
@@ -12,9 +20,20 @@ def sequence_cbom_for_cost_walk() -> None:
 
     # *** read Excel data file ***
     # get path to input data folder
-    folder_path = paths.get_path_to_input_file_folder()
+    folder_path = ctrl.get_folder(
+        settings_key=ctrl.temp_setting_keys.SOURCE_FILES_FOLDER,
+        dialog_title="Select source file data folder",
+        dialog_prompt=None,
+    )
+
     # get Excel file name to process
-    file_name = paths.get_selected_excel_file_name(folder_path)
+    file_name = menu.file_selector(
+        folder_path_in=folder_path,
+        extensions=importer.EXCEL_FILE_TYPES,
+        menu_title="Select source file: ",
+        menu_prompt=None,
+    )
+
     # read excel file data
     excel_data = files.read_raw_excel_file_data(folder_path, file_name)
 
@@ -67,7 +86,11 @@ def sequence_cbom_for_cost_walk() -> None:
     # keep only the columns needed based on cBOM cost walk
     df = frames.get_bom_columns(df, output_bom_header)
     # get path to output data folder
-    folder_path = paths.get_path_to_outputs_folder()
+    folder_path = ctrl.get_folder(
+        settings_key=ctrl.temp_setting_keys.DESTINATION_FILES_FOLDER,
+        dialog_title="Select destination file data folder",
+        dialog_prompt=None,
+    )
     # Set Excel file name
     file_name = OutputFileType.CW.value + file_name
     # write Excel file data
@@ -83,9 +106,18 @@ def sequence_cbom_for_db_upload() -> None:
 
     # *** read cBOM Excel data file ***
     # get path to input data folder
-    folder_path = paths.get_path_to_input_file_folder()
+    folder_path = ctrl.get_folder(
+        settings_key=ctrl.temp_setting_keys.SOURCE_FILES_FOLDER,
+        dialog_title="Select source file data folder",
+        dialog_prompt=None,
+    )
     # get Excel file name to process
-    file_name = paths.get_selected_excel_file_name(folder_path)
+    file_name = menu.file_selector(
+        folder_path_in=folder_path,
+        extensions=importer.EXCEL_FILE_TYPES,
+        menu_title="Select source file: ",
+        menu_prompt=None,
+    )
     # read excel file data
     excel_data = files.read_raw_excel_file_data(folder_path, file_name)
 
@@ -169,7 +201,11 @@ def sequence_cbom_for_db_upload() -> None:
     # keep only the columns needed based on cBOM upload to dB
     df = frames.get_bom_columns(df, output_bom_header)
     # get path to output data folder
-    folder_path = paths.get_path_to_outputs_folder()
+    folder_path = ctrl.get_folder(
+        settings_key=ctrl.temp_setting_keys.DESTINATION_FILES_FOLDER,
+        dialog_title="Select destination file data folder",
+        dialog_prompt=None,
+    )
     # Set Excel file name
     file_name = OutputFileType.dB_CB.value + file_name
     # write Excel file data
@@ -185,9 +221,18 @@ def sequence_ebom_for_db_upload():
 
     # *** read Excel data file ***
     # get path to input data folder
-    folder_path = paths.get_path_to_input_file_folder()
+    folder_path = ctrl.get_folder(
+        settings_key=ctrl.temp_setting_keys.SOURCE_FILES_FOLDER,
+        dialog_title="Select source file data folder",
+        dialog_prompt=None,
+    )
     # get Excel file name to process
-    file_name = paths.get_selected_excel_file_name(folder_path)
+    file_name = menu.file_selector(
+        folder_path_in=folder_path,
+        extensions=importer.EXCEL_FILE_TYPES,
+        menu_title="Select source file: ",
+        menu_prompt=None,
+    )
     # read excel file data
     excel_data = files.read_raw_excel_file_data(folder_path, file_name)
 
@@ -276,7 +321,11 @@ def sequence_ebom_for_db_upload():
     # keep only the columns needed based on eBOM upload to dB
     df = frames.get_bom_columns(df, output_bom_header)
     # get path to output data folder
-    folder_path = paths.get_path_to_outputs_folder()
+    folder_path = ctrl.get_folder(
+        settings_key=ctrl.temp_setting_keys.DESTINATION_FILES_FOLDER,
+        dialog_title="Select destination file data folder",
+        dialog_prompt=None,
+    )
     # Set Excel file name
     file_name = OutputFileType.db_EB.value + file_name
     # write Excel file data
