@@ -44,5 +44,15 @@ else
     echo "✅ Unit test passes. "
 fi
 
+# Run build executable
+echo "🔨 Building executable..."
+python scripts/build_exe.py
+if [ $? -ne 0 ]; then
+    echo "❌ PUSH ABORTED! Build FAILED."
+    exit 1
+else
+    echo "✅ Build successful."
+fi
+
 echo "✅ All pre-push checks passed."
 exit 0
