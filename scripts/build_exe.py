@@ -9,23 +9,27 @@ Key Responsibilities:
 	- Invoke an external packaging tool to generate a standalone executable
 	- Report build progress and final artifact location
 	- Perform post-build cleanup of temporary artifacts while preserving output
+	- Copy required runtime resource files into the distribution directory
 
 Expected Project Layout:
     bom-check/
     ├── scripts/
-    │   └── build_exe.py    ← this file
+    │   └── build_exe.py        ← this file
     ├── src/
-    │   └── main.py
-    ├── build/              (created by PyInstaller, cleaned by this script)
-    ├── dist/
-    └── bom-check.spec      (created by PyInstaller, cleaned by this script)
+    │   ├── main.py
+    │   └── resources/          ← folder containing resources required to run the application
+    ├── build/                  (created by PyInstaller, auto deleted by this script on successful executable build)
+    ├── dist/                   (created by this script)
+    │   ├── bom-check.exe       ← executable file (created by this script)
+    │   └── resources/          (created by this script)
+    └── bom-check.spec          (created by PyInstaller, auto deleted by this script on successful executable build)
 
 Example Usage:
 	from scripts import build_exe
 	build_exe.main()
 
 Dependencies:
-	- Python version: >= 3.8
+	- Python version: >= 3.9
 	- Standard Library: os, shutil, stat, subprocess, sys, pathlib
 
 Notes:
@@ -58,6 +62,14 @@ CLEAN_FILES = [
     PROJECT_ROOT / "bom-check.spec",
 ]
 
+# Explicit whitelist of resource filenames required at runtime by the executable.
+RESOURCES_FILES = {
+    "application.json",
+    "board_supplier_codes.json",
+    "component_type.json",
+    "BomTemplateV3.xlsx",
+}
+
 PYINSTALLER_ARGS = [
     sys.executable, "-m", "PyInstaller",
     "--onefile",
@@ -71,10 +83,7 @@ def _clear_read_only_flag(retry_func, target_path: str, _exception_info: tuple) 
     """
     Clear the read-only flag on a filesystem path and retry a failed operation.
 
-    This function is designed to be used as an error handler for shutil.rmtree.
-    It assumes the failure was caused by insufficient write permissions (commonly
-    seen on Windows or synced directories like OneDrive). It modifies the file
-    mode to writable and retries the original operation.
+    This function is designed to be used as an error handler for shutil.rmtree. It assumes the failure was caused by insufficient write permissions (commonly seen on Windows or synced directories like OneDrive). It modifies the file mode to writable and retries the original operation.
 
     Args:
         retry_func (Callable): The function that raised the exception (e.g., os.remove or os.rmdir).
@@ -105,9 +114,7 @@ def _remove_folder_if_exists(folder_path: Path) -> None:
     """
     Remove a folder tree if it exists and is a directory.
 
-    This function ensures cleanup remains idempotent by skipping paths that do not exist
-    or are not directories. It uses a custom error handler to recover from read-only
-    permission issues during recursive deletion.
+    This function ensures cleanup remains idempotent by skipping paths that do not exist or are not directories. It uses a custom error handler to recover from read-only permission issues during recursive deletion.
 
     Args:
         folder_path (Path): Folder path to remove.
@@ -142,8 +149,7 @@ def _remove_file_if_exists(file_path: Path) -> None:
     """
     Remove a file if it exists and is a regular file.
 
-    This function ensures safe repeated execution by skipping paths that do not exist
-    or are not files. It performs direct deletion without retry logic.
+    This function ensures safe repeated execution by skipping paths that do not exist or are not files. It performs direct deletion without retry logic.
 
     Args:
         file_path (Path): File path to remove.
@@ -178,9 +184,7 @@ def _clean_build_artifacts() -> None:
     """
     Remove configured build folders and files before a build.
 
-    This function iterates over predefined global cleanup targets and delegates
-    deletion to helper functions. Missing artifacts are intentionally skipped
-    to ensure idempotent cleanup behavior.
+    This function iterates over predefined global cleanup targets and delegates deletion to helper functions. Missing artifacts are intentionally skipped to ensure idempotent cleanup behavior.
 
     Returns:
         None
@@ -208,9 +212,7 @@ def _build() -> None:
     """
     Run PyInstaller to generate the bom-check executable.
 
-    Executes the configured PyInstaller command from the project root directory.
-    If PyInstaller exits with a non-zero status, the process terminates immediately.
-    On success, the function resolves and reports the generated executable path.
+    Executes the configured PyInstaller command from the project root directory. If PyInstaller exits with a non-zero status, the process terminates immediately. On success, the function resolves and reports the generated executable path.
 
     Returns:
         None
@@ -230,7 +232,7 @@ def _build() -> None:
         # Immediately exit if PyInstaller fails to avoid masking errors
         if result.returncode != 0:
             return_code = result.returncode
-            print("\n[ERROR] PyInstaller failed with exit code", result.returncode)
+            print("\n  [ERROR] PyInstaller failed with exit code", result.returncode)
             sys.exit(result.returncode)
 
         # Define expected output paths for cross-platform compatibility
@@ -241,7 +243,7 @@ def _build() -> None:
         final_executable_path = exe_win if exe_win.exists() else exe_path
 
         # Report successful build output location
-        print(f"\n[OK] Executable ready: {final_executable_path}")
+        print(f"\n  [OK] Executable ready: {final_executable_path}")
     except Exception as exc:
         # Wrap unexpected failures with preserved return code context
         raise RuntimeError(
@@ -254,8 +256,7 @@ def _post_build_clean() -> None:
     """
     Remove intermediate PyInstaller artifacts after a successful build.
 
-    This function deletes temporary build directories and generated spec files
-    while preserving the final distributable located in the dist directory.
+    This function deletes temporary build directories and generated spec files while preserving the final distributable located in the dist directory.
 
     Returns:
         None
@@ -277,13 +278,88 @@ def _post_build_clean() -> None:
         ) from exc
 
 
+def _copy_required_resources_to_dist() -> None:
+    """
+    Copy required resource files from src/resources to dist/resources.
+
+    This function enforces that all required filenames defined in RESOURCES_FILES are present somewhere within the source tree. It performs a full scan and resolves the first occurrence of each file. Duplicate filenames result in a warning, but the first discovered file is used.
+
+    The destination directory is fully replaced to ensure no stale files persist.
+
+    Returns:
+        None
+
+    Raises:
+        RuntimeError: If the source directory is missing, required files are not found,
+        or any copy operation fails.
+    """
+    src_resources = PROJECT_ROOT / "src" / "resources"
+    dst_resources = PROJECT_ROOT / "dist" / "resources"
+
+    try:
+        # Validate source directory existence before performing any operations.
+        if not src_resources.exists() or not src_resources.is_dir():
+            raise RuntimeError(f"Source resources directory not found: {src_resources}")
+
+        # Build mapping of required filenames to their resolved paths.
+        # First occurrence wins to enforce deterministic resolution.
+        found: dict[str, Path] = {}
+
+        for candidate in sorted(src_resources.rglob("*")):
+            # Skip non-file entries to avoid invalid matches.
+            if not candidate.is_file():
+                continue
+
+            name = candidate.name
+
+            if name in RESOURCES_FILES:
+                # Preserve first occurrence and warn on duplicates.
+                if name in found:
+                    print(f"  [WARN] Duplicate found, using first match: {found[name]}")
+                else:
+                    found[name] = candidate
+
+        # Identify missing required files before modifying destination.
+        missing = RESOURCES_FILES - found.keys()
+        if missing:
+            missing_list = "\n    ".join(sorted(missing))
+            raise RuntimeError(
+                f"The following required resource files were not found under '{src_resources}':\n"
+                f"    {missing_list}"
+            )
+
+        # Remove destination directory to guarantee a clean state.
+        if dst_resources.exists():
+            shutil.rmtree(dst_resources, onerror=_clear_read_only_flag)
+            print(f"  Removed stale directory: {dst_resources}")
+
+        # Recreate destination root directory.
+        dst_resources.mkdir(parents=True, exist_ok=True)
+        print(f"  Created: {dst_resources}")
+
+        # Copy files while preserving relative structure.
+        for name, src_file in sorted(found.items()):
+            relative_path = src_file.relative_to(src_resources)
+            dst_file = dst_resources / relative_path
+
+            # Ensure parent directories exist before copying.
+            dst_file.parent.mkdir(parents=True, exist_ok=True)
+
+            # Copy file with metadata preservation.
+            shutil.copy2(src_file, dst_file)
+            print(f"  Copied: {relative_path}")
+
+    except Exception as exc:
+        raise RuntimeError(
+            f"Failed to copy resources from '{src_resources}' to '{dst_resources}'.\n{exc}"
+        ) from exc
+
+
 def main() -> None:
     """
     Execute the full build workflow.
 
-    This function orchestrates pre-build cleanup, execution of the build process,
-    and post-build cleanup. If the build step fails, the process exits and
-    post-build cleanup is not executed.
+    This function orchestrates pre-build cleanup, build execution, post-build cleanup, and resource copying. Execution halts immediately if the build step fails. If the build step fails, the process exits and subsequent steps are not executed.
 
     Returns:
         None
@@ -304,6 +380,10 @@ def main() -> None:
         # Perform post-build cleanup only if build succeeded
         print("\n--- Post Build Clean ---------------------------------------------")
         _post_build_clean()
+
+        # Copy required runtime resources into distribution directory.
+        print("\n--- Executable Resources -----------------------------------------")
+        _copy_required_resources_to_dist()
 
         # Indicate successful completion of the workflow
         print("\n=== Done =========================================================")
