@@ -26,7 +26,7 @@ Expected Project Layout:
 
 Example Usage:
 	from scripts import build_exe
-	build_exe.main()
+	result = build_exe.build_executable()
 
 Dependencies:
 	- Python version: >= 3.9
@@ -77,6 +77,9 @@ PYINSTALLER_ARGS = [
     "--paths", str(PROJECT_ROOT / "src"),
     str(PROJECT_ROOT / "src" / "main.py"),
 ]
+
+FAILURE: int = -1
+SUCCESS: int = 0
 
 
 def _clear_read_only_flag(retry_func, target_path: str, _exception_info: tuple) -> None:
@@ -218,10 +221,8 @@ def _build() -> None:
         None
 
     Raises:
-        SystemExit: If PyInstaller returns a non-zero exit code.
         RuntimeError: If subprocess execution or path resolution fails.
     """
-    return_code = 0
     try:
         # Print the exact command for reproducibility and debugging
         print(f"  Running: {' '.join(PYINSTALLER_ARGS)}\n")
@@ -229,11 +230,12 @@ def _build() -> None:
         # Execute PyInstaller from the project root to ensure correct path resolution
         result = subprocess.run(PYINSTALLER_ARGS, cwd=PROJECT_ROOT)
 
+        # TEMP: uncomment next line to force failure for testing
+        # result = subprocess.CompletedProcess(args=[], returncode=1)
+
         # Immediately exit if PyInstaller fails to avoid masking errors
         if result.returncode != 0:
-            return_code = result.returncode
-            print("\n  [ERROR] PyInstaller failed with exit code", result.returncode)
-            sys.exit(result.returncode)
+            raise RuntimeError(f"PyInstaller failed with exit code {result.returncode}")
 
         # Define expected output paths for cross-platform compatibility
         exe_path = PROJECT_ROOT / "dist" / "bom-check"
@@ -247,7 +249,7 @@ def _build() -> None:
     except Exception as exc:
         # Wrap unexpected failures with preserved return code context
         raise RuntimeError(
-            f"PyInstaller failed with exit code {return_code}. "
+            f"PyInstaller subprocess failed unexpectedly."
             f"\n{exc}"
         ) from exc
 
@@ -355,14 +357,14 @@ def _copy_required_resources_to_dist() -> None:
         ) from exc
 
 
-def main() -> None:
+def build_executable() -> int:
     """
     Execute the full build workflow.
 
     This function orchestrates pre-build cleanup, build execution, post-build cleanup, and resource copying. Execution halts immediately if the build step fails. If the build step fails, the process exits and subsequent steps are not executed.
 
     Returns:
-        None
+        int: SUCCESS (0) if completed successfully, otherwise FAILURE (-1).
 
     Raises:
         RuntimeError: If any stage of the workflow fails unexpectedly.
@@ -387,13 +389,15 @@ def main() -> None:
 
         # Indicate successful completion of the workflow
         print("\n=== Done =========================================================")
+
+        return SUCCESS
+
     except Exception as exc:
-        # Wrap any unexpected failure in a RuntimeError for consistent error reporting
-        raise RuntimeError(
-            f"Build workflow failed"
-            f"\n{exc}"
-        ) from exc
+        print(f"\n[ERROR] Build workflow failed:\n{exc}")
+
+        return FAILURE
 
 
 if __name__ == "__main__":
-    main()
+    if build_executable() != SUCCESS:
+        sys.exit(1)
