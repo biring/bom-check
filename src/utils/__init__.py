@@ -22,6 +22,7 @@ License:
 """
 
 # --- public module namespaces ---
+from . import _app_mode as app_mode
 from . import _excel_io as excel_io
 from . import _file_path as file_path
 from . import _folder_path as folder_path
@@ -33,6 +34,7 @@ from . import _timestamp as timestamp
 
 # --- Combined public symbols ---
 __all__ = [
+    "app_mode",
     "excel_io",
     "file_path",
     "folder_path",
