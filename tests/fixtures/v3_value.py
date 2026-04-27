@@ -229,6 +229,7 @@ DESCRIPTION_GOOD: Final[list[str]] = [
     "Rectifier,1A,50V",  # word + ratings
     "MOSFET,N-CH,30V,10A",  # multiple segments
     "IC,3.3V,100mA",  # includes dot and uppercase letters
+    "Silicon Rectifier Diode,1A,50V,SOD-123",  # spaces within tokens are acceptable
 ]
 DESCRIPTION_BAD: Final[list[str]] = [
     "",  # empty string not allowed
@@ -237,6 +238,7 @@ DESCRIPTION_BAD: Final[list[str]] = [
     "1uF,10%,50V ",  # trailing whitespace
     "IC,\t3.3V,100mA",  # tab is whitespace
     "Rectifier,\n1A,50V",  # newline is whitespace
+    "1k,\u00A01%,0603",  # non-breaking space (Unicode whitespace)
 ]
 
 UNITS_GOOD: Final[list[str]] = [

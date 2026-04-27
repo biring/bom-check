@@ -98,11 +98,11 @@ DEVICE_PACKAGE_PATTERN = re.compile(
 )
 
 DESCRIPTION_RULE: str = (
-    "Valid '{a}' must not be empty and contain no whitespace "
-    "(e.g., '1k,1%,0.5W', '1uF,10%,50V', 'Rectifier,1A,50V')."
+    "Valid '{a}' must be non-empty and may contain single spaces between comma-separated values. "
+    "No other whitespace allowed. (e.g., '1k,1%,0.5W', 'Silicon Rectifier Diode,1A,50V,SOD-123')."
 )
 
-DESCRIPTION_PATTERN = re.compile(r'^\S+$')
+DESCRIPTION_PATTERN = re.compile(r'^\S+( \S+)*,\S+(,\S+)*$')
 
 UNITS_RULE: str = (
     "Valid '{a}' is either empty or a string of alphabets with an optional dot "
