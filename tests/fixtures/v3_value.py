@@ -293,6 +293,7 @@ MFG_PART_NO_GOOD: Final[list[str]] = [
     "ADXL345.B",  # with dot
     "XC7Z010-1CLG400C",  # complex part number
     "BC547B",  # letters + digits
+    "LM358#N",  # '#' is allowed
 ]
 MFG_PART_NO_BAD: Final[list[str]] = [
     "",  # must not be empty
@@ -301,7 +302,6 @@ MFG_PART_NO_BAD: Final[list[str]] = [
     "BC547B ",  # trailing space
     "Part*123",  # '*' not allowed
     "SN74HC595N@TR",  # '@' not allowed
-    "LM358#N",  # '#' not allowed
 ]
 
 UL_VDE_NO_GOOD: Final[list[str]] = [

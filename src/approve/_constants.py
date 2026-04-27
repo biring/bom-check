@@ -128,12 +128,12 @@ MFG_NAME_PATTERN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9 ,.&-]*[A-Za-z0-9.]$')
 
 MFG_PART_NO_RULE: str = (
     "Valid '{a}' must contain at least one character and "
-    "consist of alphabets and numbers, with optional '-', '_', or '.' characters. "
+    "consist of alphanumeric characters with optional '-', '_', '#', or '.' characters. "
     "Whitespace and '*' are not allowed "
-    "(e.g., 'LM358N', 'SN74HC595N-TR', 'AT328P_U', 'BC547B')."
+    "(e.g., 'LM358N', 'SN74HC595N-TR', 'AT328P_U', 'BC547#B')."
 )
 
-MFG_PART_NO_PATTERN = re.compile(r'^[A-Za-z0-9._-]+$')
+MFG_PART_NO_PATTERN = re.compile(r'^[A-Za-z0-9._#-]+$')
 
 UL_VDE_NO_RULE: str = (
     "Valid '{a}' may be empty, or start with 1–4 alphabets followed by 1–8 digits, "
