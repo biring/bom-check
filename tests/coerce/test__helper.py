@@ -61,6 +61,33 @@ class TestApplyRule(unittest.TestCase):
             with self.subTest(case=case_name, field="Log Count", Exp=1, Act=len(result.changes)):
                 self.assertEqual(len(result.changes), 1)
 
+    def test_post_rules(self):
+        """
+        Should apply each post-rule transformation after field-specific rules.
+        """
+        # ARRANGE
+        attr = "AnyField"
+        rules = []
+        cases = [
+            ("Collapse double spaces", "A  B", "A B", 1),
+            ("Collapse multiple spaces", "A   B", "A B", 1),
+            ("Strip starting edge spaces", " A B", "A B", 1),
+            ("Strip ending edge spaces", "A B ", "A B", 1),
+            ("Strip edge spaces", " A B ", "A B", 1),
+            ("Collapse double spaces and strip edge spaces", "  A B ", "A B", 2),
+
+        ]
+
+        # ACT & ASSERT
+        for case_name, actual_in, expected_out, log_length in cases:
+            result = common.apply_rule(actual_in, rules, attr)
+
+            with self.subTest(case=case_name, field="Result", Exp=expected_out, Act=result.coerced_value):
+                self.assertEqual(result.coerced_value, expected_out)
+
+            with self.subTest(case=case_name, field="Log Count", Exp=log_length, Act=len(result.changes)):
+                self.assertEqual(len(result.changes), log_length)
+
     def test_pattern_change(self):
         """
         Should apply a simple string replacement rule and record exactly one log entry.

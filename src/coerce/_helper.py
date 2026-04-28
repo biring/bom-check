@@ -30,8 +30,7 @@ __all__ = []  # Internal-only; not part of public API. Star import from this mod
 
 import re
 from ._types import Rule, Result, Log
-
-from ._rules import PRE_RULES
+from ._rules import PRE_RULES, POST_RULES
 
 
 def _show(text: str, max_len: int = 32) -> str:
@@ -101,6 +100,19 @@ def apply_rule(str_in: str, rules: list[Rule], attr_name: str) -> Result:
             result.changes.append(log)
 
         # Carry forward output as input for next rule
+        text_in = text_out
+
+    # Apply post-rules to normalize known artifacts after field-specific coercion rules run.
+    for rule in POST_RULES:
+        # Apply the regex substitution
+        text_out = re.sub(rule.pattern, rule.replacement, text_in)
+
+        # Log only on change to avoid noisy, redundant entries.
+        if text_out != text_in:
+            log = Log(before=_show(text_in), after=_show(text_out), description=rule.description)
+            result.changes.append(log)
+
+        # Carry forward the output as the next input to preserve deterministic sequencing.
         text_in = text_out
 
     # Finalize coerced value and return immutable record.

@@ -45,6 +45,12 @@ PRE_RULES = [
     rx.CHINESE_COLON,
 ]
 
+# This rule is always run after attribute specific rule is run
+POST_RULES = [
+    rx.COLLAPSE_MULTIPLE_SPACES,
+    rx.STRIP_EDGE_SPACES,
+]
+
 # model_no
 MODEL_NUMBER: list = [
     rx.TO_UPPER,
