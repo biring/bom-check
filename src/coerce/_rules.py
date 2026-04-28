@@ -35,7 +35,7 @@ __all__ = []  # Internal-only; not part of public API. Star import from this mod
 
 from . import _regex as rx
 
-# This rule is always run before attribute specific rule is run
+# This rule is always run before field specific rule is run
 PRE_RULES = [
     rx.REMOVE_EXCEL_XML_CONTROL_CHARS,
     rx.CHINESE_COMMA,
@@ -44,13 +44,11 @@ PRE_RULES = [
     rx.CHINESE_SEMICOLON,
     rx.CHINESE_COLON,
 ]
-
-# This rule is always run after attribute specific rule is run
+# This rule is always run after field specific rule is run
 POST_RULES = [
     rx.COLLAPSE_MULTIPLE_SPACES,
     rx.STRIP_EDGE_SPACES,
 ]
-
 # model_no
 MODEL_NUMBER: list = [
     rx.TO_UPPER,
@@ -59,14 +57,10 @@ MODEL_NUMBER: list = [
 # board_name
 BOARD_NAME: list = [
     rx.REMOVE_WHITESPACES_EXCEPT_SPACE,
-    rx.COLLAPSE_MULTIPLE_SPACES,
-    rx.STRIP_EDGE_SPACES,
 ]
 # manufacturer
 BOARD_SUPPLIER: list = [
     rx.REMOVE_WHITESPACES_EXCEPT_SPACE,
-    rx.COLLAPSE_MULTIPLE_SPACES,
-    rx.STRIP_EDGE_SPACES,
 ]
 # build_stage
 BUILD_STAGE: list = [
