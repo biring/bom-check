@@ -104,6 +104,11 @@ REMOVE_EXCEL_XML_CONTROL_CHARS = types.Rule(
     "",
     "Removed Excel XML control-character artifacts (CR, LF, TAB, FF, VT)."
 )
+UNICODE_SPACES_TO_SPACE = types.Rule(
+    r"[\u00A0\u202F\u2007\u2009]",
+    " ",
+    "Replaced Unicode space characters with normal space."
+)
 REMOVE_STANDALONE_FORWARD_SLASH = types.Rule(
     r"^/$",
     "",
@@ -162,11 +167,6 @@ DOT_COMMA_TO_SPACE = types.Rule(
     r"\.,",
     " ",
     "Replaced '.,' with space (e.g., 'Co.,Ltd' → 'Co Ltd')."
-)
-NBSP_TO_SPACE = types.Rule(
-    r"\u00A0",
-    " ",
-    "Replaced non-breaking space with normal space."
 )
 STRIP_EDGE_SPACES = types.Rule(
     r"^ +| +$",

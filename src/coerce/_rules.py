@@ -37,6 +37,7 @@ from . import _regex as rx
 
 # This rule is always run before field specific rule is run
 PRE_RULES = [
+    rx.UNICODE_SPACES_TO_SPACE,
     rx.REMOVE_EXCEL_XML_CONTROL_CHARS,
     rx.CHINESE_COMMA,
     rx.CHINESE_LEFT_PAREN,

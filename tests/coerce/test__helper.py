@@ -42,24 +42,29 @@ class TestApplyRule(unittest.TestCase):
         attr = "AnyField"
         rules = []
         cases = [
-            ("Excel XML control chars", "A_x0009_B_x000B_C_x000C_D_x000A_E_x000D_", "ABCDE"),
-            ("Chinese comma", "A，B", "A,B"),
-            ("Chinese left parenthesis", "A（B", "A(B"),
-            ("Chinese right parenthesis", "A）B", "A)B"),
-            ("Chinese semicolon", "A；B", "A;B"),
-            ("Chinese colon", "A：B", "A:B"),
+            ("Non-breaking space", "A\u00A0B", "A B", 1),
+            ("Narrow no-break space", "A\u202FB", "A B", 1),
+            ("Figure space", "A\u2007B", "A B", 1),
+            ("Thin space", "A\u2009B", "A B", 1),
+            ("Multiple unicode spaces", "A\u00A0\u2009B", "A B", 2),
+            ("Excel XML control chars", "A_x0009_B_x000B_C_x000C_D_x000A_E_x000D_", "ABCDE", 1),
+            ("Chinese comma", "A，B", "A,B", 1),
+            ("Chinese left parenthesis", "A（B", "A(B", 1),
+            ("Chinese right parenthesis", "A）B", "A)B", 1),
+            ("Chinese semicolon", "A；B", "A;B", 1),
+            ("Chinese colon", "A：B", "A:B", 1),
         ]
 
         # ACT
-        for case_name, actual_in, expected_out in cases:
+        for case_name, actual_in, expected_out, log_length in cases:
             result = common.apply_rule(actual_in, rules, attr)
 
             # ASSERT
             # ASSERT
             with self.subTest(case=case_name, field="Result", Exp=expected_out, Act=result.coerced_value):
                 self.assertEqual(result.coerced_value, expected_out)
-            with self.subTest(case=case_name, field="Log Count", Exp=1, Act=len(result.changes)):
-                self.assertEqual(len(result.changes), 1)
+            with self.subTest(case=case_name, field="Log Count", Exp=log_length, Act=len(result.changes)):
+                self.assertEqual(len(result.changes), log_length)
 
     def test_post_rules(self):
         """
