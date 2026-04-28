@@ -34,6 +34,33 @@ class TestApplyRule(unittest.TestCase):
     Unit tests for the `apply_rule` function.
     """
 
+    def test_pre_rules(self):
+        """
+        Should apply each pre-rule transformation before field-specific rules.
+        """
+        # ARRANGE
+        attr = "AnyField"
+        rules = []
+        cases = [
+            ("Excel XML control chars", "A_x0009_B_x000B_C_x000C_D_x000A_E_x000D_", "ABCDE"),
+            ("Chinese comma", "A，B", "A,B"),
+            ("Chinese left parenthesis", "A（B", "A(B"),
+            ("Chinese right parenthesis", "A）B", "A)B"),
+            ("Chinese semicolon", "A；B", "A;B"),
+            ("Chinese colon", "A：B", "A:B"),
+        ]
+
+        # ACT
+        for case_name, actual_in, expected_out in cases:
+            result = common.apply_rule(actual_in, rules, attr)
+
+            # ASSERT
+            # ASSERT
+            with self.subTest(case=case_name, field="Result", Exp=expected_out, Act=result.coerced_value):
+                self.assertEqual(result.coerced_value, expected_out)
+            with self.subTest(case=case_name, field="Log Count", Exp=1, Act=len(result.changes)):
+                self.assertEqual(len(result.changes), 1)
+
     def test_pattern_change(self):
         """
         Should apply a simple string replacement rule and record exactly one log entry.

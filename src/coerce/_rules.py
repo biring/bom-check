@@ -35,8 +35,14 @@ __all__ = []  # Internal-only; not part of public API. Star import from this mod
 
 from . import _regex as rx
 
+# This rule is always run before attribute specific rule is run
 PRE_RULES = [
     rx.REMOVE_EXCEL_XML_CONTROL_CHARS,
+    rx.CHINESE_COMMA,
+    rx.CHINESE_LEFT_PAREN,
+    rx.CHINESE_RIGHT_PAREN,
+    rx.CHINESE_SEMICOLON,
+    rx.CHINESE_COLON,
 ]
 
 # model_no
