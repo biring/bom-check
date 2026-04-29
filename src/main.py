@@ -1,14 +1,36 @@
 """
-Main module for the Electrical BOM (Bill of Materials) Processor.
+Application entry point and CLI orchestration layer for the electrical BOM processing system.
 
-This module provides the main entry point for interacting with the Electrical BOM
-processing system. It includes a menu interface that allows users to select various
-options for processing both cBOM and eBOM.
+This module coordinates application startup, interactive menu presentation, workflow dispatching, and graceful termination by combining static options with dynamically provided controller actions.
 
-Usage:
-    - Run this file to interact with the system. The user will be prompted with a menu
-      to select one of the available options for processing the BOMs.
+Key Responsibilities:
+	- Initialize and display application version and build metadata
+	- Present and manage an interactive command-line menu
+	- Route user selections to predefined processing workflows
+	- Integrate dynamically generated controller actions into the menu
+	- Handle user input validation, errors, and controlled termination scenarios
+
+Example Usage:
+	# Preferred usage via public package interface:
+	from application import main
+	main.main()
+
+	# Direct module usage (acceptable in unit tests or internal scripts only):
+	Not applicable. Use public package interface
+
+Dependencies:
+	- Python version: >= 3.10
+
+Notes:
+	- Designed for interactive CLI execution rather than automated workflows
+	- Relies on positional alignment between menu options and corresponding actions
+	- Assumes external modules provide processing sequences and dynamic menu entries
+	- Handles keyboard interrupts and unexpected errors without crashing
+
+License:
+	- Internal Use Only
 """
+__all__ = []  # Internal-only module; explicitly exports nothing to prevent accidental public use.
 
 import application
 import version
@@ -16,95 +38,149 @@ from cli import interfaces as cli
 from controllers import interfaces as controller
 
 
-def run_menu() -> bool:
+def run_menu() -> bool | None:
     """
-    Displays the main menu and processes the user's selection.
+    Display the main menu, resolve the user's selection, and execute the corresponding action.
 
-    This function presents a list of options to the user. The user selects an option
-    by entering the corresponding number. Based on the user's selection, the appropriate
-    function is called to process either the cBOM or eBOM for different tasks.
+    Builds a composite menu consisting of legacy options followed by dynamically provided
+    controller options. The user's selection is resolved by index:
+    - Indices within the legacy range map to hardcoded application sequences.
+    - Indices beyond the legacy range map to dynamically provided controller actions.
+    - A selection of index 0 is treated as a normal exit signal and returns None.
 
-    If the user selects an invalid option, a warning message is displayed. In the event
-    of an unexpected error, an error message is shown, and the function returns False.
+    The function enforces safe bounds checking on the selection index and provides
+    user-facing feedback for invalid selections. Keyboard interrupts are treated as
+    a controlled exit, while unexpected exceptions are caught and reported.
 
     Returns:
-        bool: True if the menu was executed successfully and a valid option selected,
-              False if an error occurred or an invalid option selected.
+        bool | None:
+            True if a valid option was executed successfully,
+            None if the user selected a normal exit,
+            False if an error occurred or the user interrupted execution.
+
+    Raises:
+        Exception: Propagated only if not caught internally (all are currently caught).
     """
+    # Build dynamic menu components from the controller layer; assumes positional alignment
     options, actions = controller.build_controller_menu()
 
-    legacy_options = ['Process cBOM for cost walk',
-                      'Process cBOM for database upload',
-                      'Process eBOM for database upload']
+    # Legacy options must remain ordered and aligned with hardcoded branching below
+    legacy_options = [
+        'Exit',
+        'Process cBOM for cost walk',
+        'Process cBOM for database upload',
+        'Process eBOM for database upload'
+    ]
 
     try:
-        # list of main menu option
+        # Combine legacy and dynamic options into a single linear menu representation
+        # Invariant: menu_options index directly maps to execution logic below
         menu_options = legacy_options + list(options)
-        # get user to make a selection
+
+        # Define prompt messages separately to keep UI concerns explicit and modifiable
         header_msg = 'main menu'
         select_msg = 'Enter the number of the menu option to execute: '
+
+        # Delegate user input handling to CLI layer; assumes integer index is returned
         user_selection = cli.prompt_menu_selection(
             menu_items=menu_options,
             header_msg=header_msg,
             select_msg=select_msg,
         )
-        # run user selection
+
+        # Branch 1: Selection falls within legacy options
         if user_selection < len(legacy_options):
+            # Explicit index-based dispatch preserves backward compatibility
             if user_selection == 0:
-                application.sequence_cbom_for_cost_walk()
+                # Index 0 is reserved for graceful exit without error
+                return None
             elif user_selection == 1:
-                application.sequence_cbom_for_db_upload()
+                application.sequence_cbom_for_cost_walk()
             elif user_selection == 2:
+                application.sequence_cbom_for_db_upload()
+            elif user_selection == 3:
                 application.sequence_ebom_for_db_upload()
+
+        # Branch 2: Selection falls within dynamically generated options
         elif user_selection < len(menu_options):
+            # Normalize index into actions list by removing legacy offset
             action_index = user_selection - len(legacy_options)
+
+            # Invariant: actions list must align 1:1 with dynamic options
+            # Assumes each action exposes a .run() method
             actions[action_index]().run()
+
         else:
+            # Defensive guard: selection exceeds available options
+            # This should only occur if CLI layer returns an invalid index
             print("WARNING! Invalid selection. Please select a valid option.")
+
     except KeyboardInterrupt:
+        # Treat user interrupt as intentional termination, not an error
         print("\nUser selected to exit the application.")
         return False
+
     except Exception as e:
+        # Catch-all for unexpected failures; prevents crash and surfaces error context
         print('*** ERROR ***')
         print(f"An error occurred: {e}")
         return False
 
+    # Successful execution path
     return True
 
 
 def show_title():
     """
-    Displays the version and build information of the application.
+    Display the application's version and build information.
 
-    This function prints the version and build information of the application as defined
-    in the version module.
+    Retrieves version metadata from the version module and prints it to stdout.
+    Assumes that the version module exposes __version__ and __build__ attributes.
 
-    Example:
-        Version 1.0.0
-        Build 12345
+    Returns:
+        None: This function performs output only and does not return a value.
     """
+    # Output version string; assumes attribute exists and is properly formatted
     print(f'Version {version.__version__} ')
+
+    # Output build identifier; trailing space preserved for consistency with original behavior
     print(f'Build {version.__build__} ')
 
 
 def main():
     """
-    Main function to run the application.
+    Execute the application entry point and manage the main menu loop lifecycle.
 
-    This function displays the application title and enters a loop that displays
-    and handles the main menu options. The loop continues to run until the user exits
-    the application. After exiting, a message is printed to indicate the application is closing.
+    Displays the application title once, then repeatedly invokes the menu handler
+    until a termination condition is met. The loop behavior is controlled by the
+    return value of run_menu():
+    - True: Continue looping and display menu again.
+    - None: Normal exit without error; terminate immediately.
+    - False: Error or interrupt; allow user to acknowledge before exiting.
+
+    Returns:
+        None: This function controls program flow and does not return a value.
     """
-    # Menu title
+    # Display application metadata before entering interactive loop
     show_title()
 
-    # Forever loop
-    while run_menu():
-        pass
+    # Infinite loop delegates exit control to run_menu return contract
+    while True:
+        result = run_menu()
 
-    # Exit message
-    print()
-    input("\nPress Enter to close application...")
+        if result:
+            # Successful execution; continue presenting menu
+            continue
+
+        elif result is None:
+            # Graceful exit path; no user prompt required
+            break
+
+        elif not result:
+            # Error or interrupt path; provide pause so user can read output
+            print()
+            input("\nPress Enter to close application...")
+            break
 
 
 if __name__ == "__main__":
