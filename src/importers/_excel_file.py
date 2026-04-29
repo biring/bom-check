@@ -33,6 +33,7 @@ __all__ = []  # Internal-only; not part of public API. Star imports from this mo
 import pandas as pd
 
 from src.utils import (
+    app_mode,
     folder_path,
     file_path,
     excel_io,
@@ -41,6 +42,7 @@ from src.utils import (
 # Module Constants
 EXCEL_FILE_TYPES = (excel_io.EXCEL_FILE_TYPE,)
 TEMPLATE_FOLDER_PARTS = ("src", "resources", "templates")
+_TEMPLATE_FOLDER_PARTS_EXE = ("resources", "templates")
 TEMPLATE_NAME = "BomTemplateV3"
 
 
@@ -91,8 +93,7 @@ def load_version3_bom_template() -> pd.DataFrame:
     """
     Load the Version 3 BOM export template as a DataFrame.
 
-    The template is resolved from the project resources folder and is
-    expected to contain exactly one worksheet.
+    Resolves the template resource folder according to the current application mode, loads the configured template workbook without treating the top row as headers, requires the workbook to contain exactly one worksheet, and rejects an empty template DataFrame.
 
     Returns:
         pd.DataFrame: Template DataFrame.
@@ -101,38 +102,54 @@ def load_version3_bom_template() -> pd.DataFrame:
         RuntimeError: If the template cannot be loaded or is empty.
     """
     try:
-        # Resolve project root in development mode
-        project_root_path = folder_path.resolve_project_folder()
+        # Select the resource root according to runtime mode so development, unit test, and executable layouts remain isolated.
+        if app_mode.APP_MODE == app_mode.APP_MODE.DEVELOPMENT or app_mode.APP_MODE == app_mode.APP_MODE.UNITTEST:
+            # Development and unit test modes resolve resources from the project source tree.
+            project_root_path = folder_path.resolve_project_folder()
+            sub_folder_list = TEMPLATE_FOLDER_PARTS
+        elif app_mode.APP_MODE == app_mode.APP_MODE.EXECUTABLE:
+            # Executable mode resolves resources from the packaged application folder layout.
+            project_root_path = folder_path.resolve_exe_folder()
+            sub_folder_list = _TEMPLATE_FOLDER_PARTS_EXE
+        else:
+            # Fail fast for unsupported modes so template loading cannot proceed with an undefined folder layout.
+            raise RuntimeError(f"Application mode {app_mode.APP_MODE} not supported")
 
-        # Construct full template path
+        # Compose the expected workbook file name from the configured template stem and shared Excel file extension.
         template_file_name = TEMPLATE_NAME + excel_io.EXCEL_FILE_TYPE
-        template_folder_path = folder_path.construct_folder_path(project_root_path, TEMPLATE_FOLDER_PARTS)
 
-        # Load workbook (expected to contain exactly one sheet)
+        # Construct the folder path after mode resolution so the selected resource layout controls where the template is loaded from.
+        template_folder_path = folder_path.construct_folder_path(project_root_path, sub_folder_list)
+
+        # Load the template workbook as data rows rather than header-based columns because the template structure is preserved verbatim.
         template_dict = read_excel_as_dict(template_folder_path, template_file_name, top_row_is_header=False)
 
+        # Enforce the template invariant that the Version 3 BOM template workbook owns exactly one worksheet.
         if len(template_dict) != 1:
             raise RuntimeError(
                 f"Expected exactly one worksheet in template '{template_file_name}', found {len(template_dict)}."
             )
 
-        # Extract the single template sheet
+        # Extract the only worksheet after the one-sheet invariant has been enforced.
         _, template_data_frame = next(iter(template_dict.items()))
 
+        # Reject empty templates because callers require actual template content to export or compare against.
         if template_data_frame.empty:
             raise RuntimeError(
                 f"Empty version 3 bom template '{template_file_name}'."
             )
 
+        # Return the validated single-sheet template DataFrame.
         return template_data_frame
 
-
     except (FileNotFoundError, TypeError, ValueError, RuntimeError) as err:
+        # Wrap expected path, validation, mode, and template-shape failures with consistent resource-loading context.
         raise RuntimeError(
             f"Failed to load version 3 bom template from project resource folder. \n{err}"
         ) from err
 
     except Exception as exc:
+        # Wrap all other failures separately so unexpected conditions remain distinguishable to callers and logs.
         raise RuntimeError(
             f"Unexpected error while loading version 3 bom template from project resource folder. \n{exc}"
         ) from exc
