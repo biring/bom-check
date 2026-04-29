@@ -11,12 +11,12 @@ Key Responsibilities:
 	- Handle user input validation, errors, and controlled termination scenarios
 
 Example Usage:
-	# Preferred usage via public package interface:
-	from application import main
-	main.main()
+    # Using command line interface (from project root context)
+    python -m src.main
 
-	# Direct module usage (acceptable in unit tests or internal scripts only):
-	Not applicable. Use public package interface
+    # Called within a script (from project root context)
+    from src.main import run_application
+    run_application()
 
 Dependencies:
 	- Python version: >= 3.10
@@ -30,7 +30,9 @@ Notes:
 License:
 	- Internal Use Only
 """
-__all__ = []  # Internal-only module; explicitly exports nothing to prevent accidental public use.
+__all__ = [
+    'run_application',
+]
 
 import application
 import version
@@ -147,7 +149,7 @@ def show_title():
     print(f'Build {version.__build__} ')
 
 
-def main():
+def run_application():
     """
     Execute the application entry point and manage the main menu loop lifecycle.
 
@@ -184,4 +186,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    run_application()
