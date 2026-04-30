@@ -1,6 +1,6 @@
 import re
 
-import strings
+from src import strings
 import pandas as pd
 
 

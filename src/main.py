@@ -34,10 +34,10 @@ __all__ = [
     'run_application',
 ]
 
-import application
-import version
-from cli import interfaces as cli
-from controllers import interfaces as controller
+from src import application
+from src import version
+from src.cli import interfaces as cli
+from src.controllers import interfaces as controller
 
 
 def run_menu() -> bool | None:

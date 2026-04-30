@@ -3,9 +3,9 @@ from typing import Type
 
 import pandas as pd
 
-import columns
-import header
-import rows
+from src import columns
+from src import header
+from src import rows
 from src import strings
 
 from src.enumeration import SourceFileType, OutputFileType, BomTempVer
@@ -1188,7 +1188,7 @@ def fill_empty_item_cells(df: pd.DataFrame) -> pd.DataFrame:
     print()
     print('Filling empty item cells.. ')
 
-    df = columns.fill_empty_item_cells(df, itemHdr, componentHdr)
+    df = columns.fill_empty_item_cells(df, itemHdr, componentHdr, designatorHdr)
 
     print('Done.')
 

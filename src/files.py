@@ -1,6 +1,6 @@
 # manage file data
 
-from cli import interfaces as cli
+from src.cli import interfaces as cli
 import os
 import pandas as pd
 

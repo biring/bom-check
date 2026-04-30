@@ -1,4 +1,4 @@
-import strings
+from src import strings
 
 import re
 import pandas as pd

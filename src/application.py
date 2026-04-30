@@ -1,11 +1,11 @@
-import files
-import strings
-import frames
+from src import files
+from src import strings
+from src import frames
 from src.enumeration import SourceFileType, OutputFileType, BomTempVer
 
 
 # noinspection PyProtectedMember
-from controllers import _base as base # migrating to controller to deprecating paths.py
+from src.controllers import _base as base # migrating to controller to deprecating paths.py
 
 from src.menus import interfaces as menu
 from src.importers import interfaces as importer

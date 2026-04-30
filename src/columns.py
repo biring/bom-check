@@ -1,7 +1,5 @@
 import pandas as pd
 
-from src.frames import designatorHdr
-
 
 def get_single_header_index(df, reference_string, full_match=True):
     """
@@ -136,7 +134,7 @@ def reorder_header_to_list(df: pd.DataFrame, order: list) -> pd.DataFrame:
     mdf = df[order]
     return mdf
 
-def fill_empty_item_cells(df: pd.DataFrame, item: str, component: str) -> pd.DataFrame:
+def fill_empty_item_cells(df: pd.DataFrame, item: str, component: str, designatorHdr: str) -> pd.DataFrame:
     """
     Fills empty cells in the specified item column based on rules using the component column.
 
