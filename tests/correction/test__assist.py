@@ -456,7 +456,7 @@ class TestDescription(_Assert):
         """
         Should update the description and include both the old and new values in the generated change log.
         """
-        row_in = replace(bfx.BOARD_A.rows[0], description="\n" + str(bfx.BOARD_A.rows[0].description))
+        row_in = replace(bfx.BOARD_A.rows[0], description="*" + str(bfx.BOARD_A.rows[0].description))
         expected_out = bfx.BOARD_A.rows[0].description
 
         actual_out, log = _act_with_patch(assist.description, row_in, str(expected_out))

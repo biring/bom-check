@@ -418,7 +418,7 @@ class TestInterface(_Asserts):
         """
         # ARRANGE
         fn = correct.description
-        bad = replace(bfx.ROW_A_1, description="\t" + bfx.ROW_A_1.description)
+        bad = replace(bfx.ROW_A_1, description="*" + bfx.ROW_A_1.description)
         expected = bfx.ROW_A_1.description
 
 
@@ -520,7 +520,7 @@ class TestInterface(_Asserts):
         """
         # ARRANGE
         fn = correct.manufacturer
-        bad = replace(bfx.ROW_A_1, mfg_name="\t" + bfx.ROW_A_1.mfg_name)
+        bad = replace(bfx.ROW_A_1, mfg_name="*" + bfx.ROW_A_1.mfg_name)
         expected = bfx.ROW_A_1.mfg_name
 
 
@@ -554,7 +554,7 @@ class TestInterface(_Asserts):
         """
         # ARRANGE
         fn = correct.mfg_part_number
-        bad = replace(bfx.ROW_A_1, mfg_part_number="\t" + bfx.ROW_A_1.mfg_part_number)
+        bad = replace(bfx.ROW_A_1, mfg_part_number="*" + bfx.ROW_A_1.mfg_part_number)
         expected = bfx.ROW_A_1.mfg_part_number
 
 

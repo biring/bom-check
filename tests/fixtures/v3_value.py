@@ -233,12 +233,7 @@ DESCRIPTION_GOOD: Final[list[str]] = [
 ]
 DESCRIPTION_BAD: Final[list[str]] = [
     "",  # empty string not allowed
-    "1k, 1%, 0.5W",  # space between values
-    " 1uF,10%,50V",  # leading whitespace
-    "1uF,10%,50V ",  # trailing whitespace
-    "IC,\t3.3V,100mA",  # tab is whitespace
-    "Rectifier,\n1A,50V",  # newline is whitespace
-    "1k,\u00A01%,0603",  # non-breaking space (Unicode whitespace)
+    " 1uF,10%,50V,12*15mm",  # has a '*'
 ]
 
 UNITS_GOOD: Final[list[str]] = [
@@ -280,10 +275,7 @@ MFG_NAME_GOOD: Final[list[str]] = [
 ]
 MFG_NAME_BAD: Final[list[str]] = [
     "",  # cannot be empty
-    " STMicro",  # cannot start with space
-    "Intel ",  # cannot end with space
-    "Nokia@",  # invalid symbol '@'
-    "Micro_chip",  # underscore not allowed
+    "Nokia*",  # invalid symbol '*'
 ]
 
 MFG_PART_NO_GOOD: Final[list[str]] = [
@@ -297,11 +289,8 @@ MFG_PART_NO_GOOD: Final[list[str]] = [
 ]
 MFG_PART_NO_BAD: Final[list[str]] = [
     "",  # must not be empty
-    "AT 328P",  # whitespace not allowed
-    " LM358N",  # leading space
-    "BC547B ",  # trailing space
     "Part*123",  # '*' not allowed
-    "SN74HC595N@TR",  # '@' not allowed
+
 ]
 
 UL_VDE_NO_GOOD: Final[list[str]] = [

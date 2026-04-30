@@ -98,11 +98,9 @@ DEVICE_PACKAGE_PATTERN = re.compile(
 )
 
 DESCRIPTION_RULE: str = (
-    "Valid '{a}' must be non-empty and may contain single spaces between comma-separated values. "
-    "No other whitespace allowed. (e.g., '1k,1%,0.5W', 'Silicon Rectifier Diode,1A,50V,SOD-123')."
+    "Valid '{a}' must be non-empty and must not contain '*'."
 )
-
-DESCRIPTION_PATTERN = re.compile(r'^\S+( \S+)*,\S+(,\S+)*$')
+DESCRIPTION_PATTERN = re.compile(r'^[^*]+$')
 
 UNITS_RULE: str = (
     "Valid '{a}' is either empty or a string of alphabets with an optional dot "
@@ -118,22 +116,16 @@ CLASSIFICATION_RULE: str = (
 CLASSIFICATION_PATTERN = re.compile(r'^[ABC]$')
 
 MFG_NAME_RULE: str = (
-    "Valid '{a}' is a non-empty string starting with a letter or digit. "
-    "It may contain letters, digits, single spaces, and the symbols '.', '-', '&', "
-    "',' Examples: 'ST Microelectronics', 'Delta Pvt. Ltd', 'Hewlett-Packard', "
-    "'Procter & Gamble', '3M', 'TI-89'."
+    "Valid '{a}' must be non-empty and must not contain '*'."
 )
 
-MFG_NAME_PATTERN = re.compile(r'^[A-Za-z0-9][A-Za-z0-9 ,.&-]*[A-Za-z0-9.]$')
+MFG_NAME_PATTERN = re.compile(r'^[^*]+$')
 
 MFG_PART_NO_RULE: str = (
-    "Valid '{a}' must contain at least one character and "
-    "consist of alphanumeric characters with optional '-', '_', '#', or '.' characters. "
-    "Whitespace and '*' are not allowed "
-    "(e.g., 'LM358N', 'SN74HC595N-TR', 'AT328P_U', 'BC547#B')."
+    "Valid '{a}' must be non-empty and must not contain '*'."
 )
 
-MFG_PART_NO_PATTERN = re.compile(r'^[A-Za-z0-9._#-]+$')
+MFG_PART_NO_PATTERN = re.compile(r'^[^*]+$')
 
 UL_VDE_NO_RULE: str = (
     "Valid '{a}' may be empty, or start with 1–4 alphabets followed by 1–8 digits, "
