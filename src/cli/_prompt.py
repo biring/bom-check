@@ -22,8 +22,8 @@ License:
 """
 __all__ = []  # Internal-only; not part of public API. Star import from this module gets nothing.
 
-from src.cli import _request as request
-from src.cli import _show as show
+from . import _request as request
+from . import _show as show
 
 _DEFAULT_MENU_HEADER = "Menu options"
 _DEFAULT_MENU_PROMPT = "Enter a number to make menu selection: "
@@ -31,51 +31,107 @@ _DEFAULT_STRING_VALUE_PROMPT = "Enter new value: "
 
 _ERR_MENU_EMPTY = "Empty menu provided for user selection. "
 _ERR_MENU_SELECTION = "Invalid menu selection. "
-_ERR_CLI_MODULE = "Unexpected problem with CLI. "
+_ERR_CLI_MODULE = "Unexpected problem with Command Line Interface. "
 
 
-def string_value(select_msg: str = _DEFAULT_STRING_VALUE_PROMPT) -> str:
+def prompt_for_string_value(select_msg: str = _DEFAULT_STRING_VALUE_PROMPT) -> str:
+    """
+    Prompt the user for a string value via the CLI request interface.
+
+    Delegates input collection to the request.string_input helper and preserves
+    user-triggered termination signals. Any unexpected exception is treated as
+    an internal CLI failure and wrapped in a RuntimeError.
+
+    Args:
+        select_msg (str, optional): Prompt message displayed to the user. Defaults to _DEFAULT_STRING_VALUE_PROMPT.
+
+    Returns:
+        str: The string value entered by the user.
+
+    Raises:
+        EOFError: Propagated if the user signals end-of-file during input.
+        KeyboardInterrupt: Propagated if the user interrupts input (e.g., Ctrl+C).
+        RuntimeError: Raised if an unexpected error occurs within the CLI subsystem.
+    """
     try:
+        # Delegate to request layer to centralize input handling and formatting logic
+        # Assumes request.string_input enforces its own validation and user messaging
         return request.string_input(select_msg)
     except (EOFError, KeyboardInterrupt):
-        raise  # pass through exactly as is
-    except Exception as e:
-        # unexpected bug (e.g., TypeError in caller formatting, etc.)
-        # TODO log exception using logger and raise generic error
-        raise RuntimeError(_ERR_CLI_MODULE) from e
+        # Preserve exact user-exit semantics; upstream callers may rely on these signals
+        raise
+    except Exception as error:
+        # Catch-all for unexpected failures (e.g., formatting issues, dependency bugs)
+        # Original exception is chained for debugging purposes
+        raise RuntimeError(
+            f"{_ERR_CLI_MODULE}"
+            f"\n{error}"
+        ) from error
 
 
-def menu_selection(menu_items: list[str], header_msg: str = _DEFAULT_MENU_HEADER,
-                   select_msg: str = _DEFAULT_MENU_PROMPT) -> int:
+def prompt_menu_selection(menu_items: list[str], header_msg: str = _DEFAULT_MENU_HEADER,
+                          select_msg: str = _DEFAULT_MENU_PROMPT) -> int:
     """
-    """
-    # local variables
-    menu_size = len(menu_items)  # include Abort
+    Prompt the user to select an option from a menu and return the selected index.
 
+    Displays a numbered menu, validates user input against bounds, and repeatedly
+    prompts until a valid selection is made. A single-item menu short-circuits to
+    avoid unnecessary prompting. User-triggered termination signals are preserved.
+
+    Args:
+        menu_items (list[str]): List of menu option labels; index position defines selection value.
+        header_msg (str, optional): Header text displayed above the menu. Defaults to _DEFAULT_MENU_HEADER.
+        select_msg (str, optional): Prompt message requesting user input. Defaults to _DEFAULT_MENU_PROMPT.
+
+    Returns:
+        int: Zero-based index of the selected menu item.
+
+    Raises:
+        ValueError: If menu_items is empty.
+        EOFError: Propagated if the user signals end-of-file during input.
+        KeyboardInterrupt: Propagated if the user interrupts input (e.g., Ctrl+C).
+        RuntimeError: Raised if an unexpected error occurs within the CLI subsystem.
+    """
+    # Determine number of selectable items; invariant: menu_size >= 0
+    menu_size = len(menu_items)
+
+    # Enforce invariant: menu must contain at least one item to be meaningful
     if menu_size == 0:
         raise ValueError(_ERR_MENU_EMPTY)
+
+    # Optimization and UX decision: avoid prompting when only one valid choice exists
+    # Always return index 0 (menu_size - 1 when size == 1)
     if menu_size == 1:
-        return menu_size - 1  # convert to 0-based index and return
+        return menu_size - 1
 
-    # Print the list of options available for the user to select
-    show.header(f'*** {header_msg.upper()} ***')
-    for idx, label in enumerate(menu_items):
-        show.info(f"[{idx}] {label}")
+    # Render menu header in a normalized uppercase format for visual emphasis
+    show.show_header(f'*** {header_msg.upper()} ***')
 
+    # Enumerate menu items with explicit indices to define valid selection bounds
+    for index, label in enumerate(menu_items):
+        # Display each option; invariant: index maps directly to return value
+        show.show_info(f"[{index}] {label}")
+
+    # Loop until valid input is received or user exits explicitly
     while True:
         try:
-            user_input = request.integer_input(select_msg)
+            # Delegate integer parsing and input handling to request layer
+            user_selection = request.integer_input(select_msg)
 
-            # Valid selection: from 0 to menu_size - 1
-            if 0 <= user_input <= menu_size - 1:
-                return user_input
+            # Validate selection against inclusive bounds [0, menu_size - 1]
+            # Explicit bounds check prevents reliance on downstream errors
+            if 0 <= user_selection <= menu_size - 1:
+                return user_selection
 
-            # Otherwise, warn and reprompt
-            show.warning(_ERR_MENU_SELECTION)
+            # Invalid but well-formed integer; notify user and continue loop
+            show.show_warning(_ERR_MENU_SELECTION)
         except (EOFError, KeyboardInterrupt):
-            # pass through expected user exits with their friendly messages from _request
+            # Preserve user intent to exit; do not intercept or transform
             raise
-        except Exception as e:
-            # unexpected bug (e.g., TypeError in caller formatting, etc.)
-            # TODO log exception using logger and raise generic error
-            raise RuntimeError(_ERR_CLI_MODULE) from e
+        except Exception as error:
+            # Catch-all for unexpected failures (e.g., request layer bugs, formatting issues)
+            # Original exception is chained for debugging purposes
+            raise RuntimeError(
+                f"{_ERR_CLI_MODULE}"
+                f"\n{error}"
+            ) from error

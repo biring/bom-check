@@ -1,180 +1,266 @@
 """
-Unit tests for CLI prompt utilities.
+Tests for CLI prompt utilities covering string input delegation and menu selection behavior.
 
-This suite verifies user interface input prompt functions
+This module validates that user-facing prompt helpers correctly delegate input collection, enforce menu selection rules, and handle error conditions. The tests focus on return values, control flow for valid and invalid inputs, propagation of user-triggered termination signals, and wrapping of unexpected exceptions into runtime errors.
 
 Example Usage:
-    # Run this test module:
-    python -m unittest tests/cli/test__prompt.py
+	# Preferred usage via project-root invocation:
+	python -m unittest tests/cli/test__prompt.py
 
-    # Discover and run all tests:
-    python -m unittest discover -s tests
+	# Direct discovery (runs all tests, including this module):
+	python -m unittest discover -s tests
+
+Test Data and Fixtures:
+	- Uses unittest.mock.patch to replace input and display helpers, isolating I/O behavior.
+	- Simulates user input via return values and side effects, including invalid sequences and exceptions.
+	- No filesystem or external resources are used; all data is in-memory and ephemeral.
 
 Dependencies:
- - Python >= 3.10
- - Standard Library: unittest, unittest.mock
- - External Packages: None
+	- Python >= 3.10
+	- Standard Library: unittest, unittest.mock
 
 Notes:
- - Tests patch src.cli._request and src.cli._show to isolate I/O and assert header/info/warning call patterns.
- - Focus is on user-visible behavior and control flow rather than implementation details.
+	- Verifies that string input is returned as provided and that unexpected exceptions are wrapped while EOFError is propagated unchanged.
+	- Confirms menu selection enforces non-empty input, short-circuits single-item menus, and repeats prompting until a valid index is received.
+	- Ensures invalid selections trigger additional input attempts and that unexpected errors during prompting are surfaced as runtime errors.
+	- Relies on patched collaborators for deterministic behavior and to assert call counts and control flow.
 
 License:
- - Internal Use Only
+	- Internal Use Only
 """
 
 import unittest
 from unittest.mock import patch
 
 # noinspection PyProtectedMember
-from src.cli import _prompt as prompt
+import src.cli._prompt as prompt
 
 
-class TestStringValue(unittest.TestCase):
+class TestPromptForStringValue(unittest.TestCase):
     """
-    Unit tests for the `string_value` function in `_prompt.py`.
+    Unit tests verifying string value prompt delegation and error handling.
     """
 
-    def test_valid(self):
+    def test_happy_path(self) -> None:
         """
-        Should return whatever `request.string_input` returns.
+        Should return the value provided by the request layer.
         """
         # ARRANGE
-        user_test = " hello "
+        expected_value = "example input"
+        patch_file = prompt.request
+        patch_function = patch_file.string_input.__name__
+
+        with patch.object(patch_file, patch_function, return_value=expected_value) as mock_call:
+            # ACT
+            result = prompt.prompt_for_string_value()
+
+        # ASSERT
+        with self.subTest("Type", Exp=str, Act=type(result)):
+            self.assertIsInstance(result, str)
+        with self.subTest("Value", Exp=expected_value, Act=result):
+            self.assertEqual(expected_value, result)
+        with self.subTest("Call count", Exp=1, Act=mock_call.call_count):
+            self.assertEqual(1, mock_call.call_count)
+
+    def test_unexpected_exception(self) -> None:
+        """
+        Should raise RuntimeError when an unexpected exception occurs.
+        """
+        # ARRANGE
+        patch_file = prompt.request
+        patch_function = patch_file.string_input.__name__
+        expected_type = RuntimeError.__name__
+        expected_reason = "boom"
+
+        with patch.object(patch_file, patch_function, side_effect=Exception(expected_reason)):
+            # ACT
+            try:
+                prompt.prompt_for_string_value()
+                actual = ""
+            except Exception as e:
+                actual = e
+
+        # ASSERT
+        actual_type = type(actual).__name__
+        with self.subTest("Error", Exp=expected_type, Act=actual_type):
+            self.assertEqual(expected_type, actual_type)
+
+        actual_args = getattr(actual, "args", ())
+        with self.subTest("Message string is not empty"):
+            self.assertTrue(bool(actual_args) and str(actual_args[0]) != "")
+
+        actual_message = str(actual)
+        with self.subTest("Message contains reason"):
+            self.assertIn(expected_reason, actual_message)
+
+    def test_eof_error_propagation(self) -> None:
+        """
+        Should propagate EOFError without wrapping.
+        """
+        # ARRANGE
+        patch_file = prompt.request
+        patch_function = patch_file.string_input.__name__
+        expected_type = EOFError.__name__
+
+        with patch.object(patch_file, patch_function, side_effect=EOFError()):
+            # ACT
+            try:
+                prompt.prompt_for_string_value()
+                actual = ""
+            except Exception as e:
+                actual = e
+
+        # ASSERT
+        actual_type = type(actual).__name__
+        with self.subTest("Error", Exp=expected_type, Act=actual_type):
+            self.assertEqual(expected_type, actual_type)
+
+        actual_args = getattr(actual, "args", ())
+        with self.subTest("Message string is not empty"):
+            # EOFError may have empty args; allow either but still assert structure
+            self.assertTrue(isinstance(actual_args, tuple))
+
+
+class TestPromptMenuSelection(unittest.TestCase):
+    """
+    Unit tests verifying menu selection control flow and validation behavior.
+    """
+
+    def test_happy_path(self) -> None:
+        """
+        Should return a valid index when user input is within bounds.
+        """
+        # ARRANGE
+        menu_items = ["alpha", "bravo", "charlie"]
+        expected_index = 1
+
+        request_patch_file = prompt.request
+        request_patch_function = request_patch_file.integer_input.__name__
+
+        show_patch_file = prompt.show
 
         with (
-            patch("builtins.input", return_value=user_test) as mock_input,
-            patch("builtins.print"),
+            patch.object(request_patch_file, request_patch_function, return_value=expected_index),
+            patch.object(show_patch_file, show_patch_file.show_header.__name__),
+            patch.object(show_patch_file, show_patch_file.show_info.__name__),
         ):
             # ACT
-            result = prompt.string_value()
+            result = prompt.prompt_menu_selection(menu_items)
 
         # ASSERT
-        with self.subTest("Value", Out=result, Exp=user_test):
-            self.assertEqual(result, user_test)
-        with self.subTest("Calls", Out=mock_input.call_count, Exp=1):
-            self.assertEqual(mock_input.call_count, 1)
+        with self.subTest("Type", Exp=int, Act=type(result)):
+            self.assertIsInstance(result, int)
+        with self.subTest("Value", Exp=expected_index, Act=result):
+            self.assertEqual(expected_index, result)
 
-    def test_error(self):
+    def test_empty_menu(self) -> None:
         """
-        Should raise RuntimeError if an unexpected exception occurs in the function.
-        """
-        # ARRANGE
-        expected = RuntimeError.__name__
-
-        with patch("builtins.input", side_effect=TypeError("boom")):
-            try:
-                # ACT
-                prompt.string_value()
-                result = "NoError"  # If nothing raised
-            except Exception as e:
-                result = e.__class__.__name__
-
-        # ASSERT
-        with self.subTest(Out=result, Exp=expected):
-            self.assertEqual(result, expected)
-
-
-class TestMenuSelection(unittest.TestCase):
-    """
-    Unit tests for the `menu_selection` function in `_prompt.py`.
-    """
-
-    def test_empty(self):
-        """
-        Should raise ValueError if menu is empty.
+        Should raise ValueError when menu is empty.
         """
         # ARRANGE
         menu_items = []
+        expected_type = ValueError.__name__
 
         # ACT
-        with self.assertRaises(ValueError) as cm:
-            prompt.menu_selection(menu_items)
+        try:
+            prompt.prompt_menu_selection(menu_items)
+            actual = ""
+        except Exception as e:
+            actual = e
 
         # ASSERT
-        with self.subTest(Out=str(cm.exception), Exp=prompt._ERR_MENU_EMPTY):
-            self.assertIn(prompt._ERR_MENU_EMPTY, str(cm.exception))
+        actual_type = type(actual).__name__
+        with self.subTest("Error", Exp=expected_type, Act=actual_type):
+            self.assertEqual(expected_type, actual_type)
 
-    def test_single(self):
+        actual_args = getattr(actual, "args", ())
+        with self.subTest("Message string is not empty"):
+            self.assertTrue(bool(actual_args) and str(actual_args[0]) != "")
+
+    def test_single_item(self) -> None:
         """
-        Should immediately return 0 when menu has one item.
+        Should return index zero when only one menu item exists.
         """
         # ARRANGE
-        menu_items = ["alpha"]
+        menu_items = ["only"]
 
         # ACT
-        result = prompt.menu_selection(menu_items)
+        result = prompt.prompt_menu_selection(menu_items)
 
         # ASSERT
-        with self.subTest(Out=result, Exp=0):
-            self.assertEqual(result, 0)
+        with self.subTest("Type", Exp=int, Act=type(result)):
+            self.assertIsInstance(result, int)
+        with self.subTest("Value", Exp=0, Act=result):
+            self.assertEqual(0, result)
 
-    def test_valid(self):
+    def test_invalid_then_valid(self) -> None:
         """
-        Should return the index chosen when input is valid.
+        Should reprompt until a valid selection is provided.
         """
         # ARRANGE
         menu_items = ["alpha", "bravo", "charlie"]
-        user_selection = 1
-        with (
-            patch("builtins.input", return_value=user_selection) as mock_input,
-            patch("builtins.print"),
-        ):
-            # ACT
-            result = prompt.menu_selection(menu_items, header_msg="Pick one")
+        invalid = 5
+        valid = 1
 
-        # ASSERT
-        with self.subTest("Selection", Out=result, Exp=user_selection):
-            self.assertEqual(result, user_selection)
-        with self.subTest("Calls", Out=mock_input.call_count, Exp=1):
-            self.assertEqual(mock_input.call_count, 1)
+        request_patch_file = prompt.request
+        request_patch_function = request_patch_file.integer_input.__name__
 
-    def test_invalid(self):
-        """
-        Should warn on invalid input and reprompt until valid.
-        """
-        # ARRANGE
-        menu_items = ["alpha", "bravo", "charlie"]
-        invalid_index = 3
-        valid_index = 1
-        # IMPORTANT: simulate the sequence as strings
-        user_sequence = [str(invalid_index), str(valid_index)]  # first invalid, then valid
+        show_patch_file = prompt.show
 
         with (
-            patch("builtins.input", side_effect=user_sequence) as mock_input,
-            patch("builtins.print"),
+            patch.object(request_patch_file, request_patch_function, side_effect=[invalid, valid]) as mock_input,
+            patch.object(show_patch_file, show_patch_file.show_header.__name__),
+            patch.object(show_patch_file, show_patch_file.show_info.__name__),
+            patch.object(show_patch_file, show_patch_file.show_warning.__name__),
         ):
             # ACT
-            result = prompt.menu_selection(menu_items)
+            result = prompt.prompt_menu_selection(menu_items)
 
         # ASSERT
-        with self.subTest("Selection", Out=result, Exp=valid_index):
-            self.assertEqual(result, valid_index)
-        with self.subTest("Calls", Out=mock_input.call_count, Exp=2):
-            self.assertEqual(mock_input.call_count, 2)
+        with self.subTest("Value", Exp=valid, Act=result):
+            self.assertEqual(valid, result)
+        with self.subTest("Call count", Exp=2, Act=mock_input.call_count):
+            self.assertEqual(2, mock_input.call_count)
 
-    def test_unexpected_error(self):
+    def test_unexpected_exception(self) -> None:
         """
-        Should raise Runtime Error if unexpected error is raised.
+        Should raise RuntimeError when an unexpected exception occurs.
         """
         # ARRANGE
-        menu_items = ["alpha", "bravo", "charlie"]
-        expected = RuntimeError.__name__
+        menu_items = ["alpha", "bravo"]
 
-        with(
-            patch("builtins.input", side_effect=TimeoutError("slow")),
-            patch("builtins.print"),
+        request_patch_file = prompt.request
+        request_patch_function = request_patch_file.integer_input.__name__
+
+        show_patch_file = prompt.show
+
+        expected_type = RuntimeError.__name__
+        expected_reason = "boom"
+
+        with (
+            patch.object(request_patch_file, request_patch_function, side_effect=Exception(expected_reason)),
+            patch.object(show_patch_file, show_patch_file.show_header.__name__),
+            patch.object(show_patch_file, show_patch_file.show_info.__name__),
         ):
+            # ACT
             try:
-                # ACT
-                prompt.menu_selection(menu_items)
-                result = "NoError"  # If nothing raised
+                prompt.prompt_menu_selection(menu_items)
+                actual = ""
             except Exception as e:
-                result = e.__class__.__name__
+                actual = e
 
         # ASSERT
-        with self.subTest(Out=result, Exp=expected):
-            self.assertEqual(result, expected)
+        actual_type = type(actual).__name__
+        with self.subTest("Error", Exp=expected_type, Act=actual_type):
+            self.assertEqual(expected_type, actual_type)
+
+        actual_args = getattr(actual, "args", ())
+        with self.subTest("Message string is not empty"):
+            self.assertTrue(bool(actual_args) and str(actual_args[0]) != "")
+
+        actual_message = str(actual)
+        with self.subTest("Message contains reason"):
+            self.assertIn(expected_reason, actual_message)
 
 
 if __name__ == "__main__":

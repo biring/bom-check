@@ -1,39 +1,47 @@
 """
-Public interface for the `cli` package.
+Facade module exposing the public command-line interface surface.
 
-This module serves as a facade, re-exporting selected functions from internal cli modules. Consumers should import from here instead of directly accessing internal files, preserving flexibility to change internal structure without breaking external code.
+This module provides a stable import boundary for command-line interactions by re-exporting selected functionality from internal components, allowing internal structure changes without impacting external consumers.
+
+Key Responsibilities:
+	- Re-export user interaction and display functions from internal modules
+	- Define and enforce the public API surface via explicit export declarations
+	- Serve as a stable facade to decouple external usage from internal structure
 
 Example Usage:
-    # Preferred usage via public package interface:
-    from src.cli import interfaces as console
-    choice = console.menu_selection(["Scan", "Parse", "Report"])
+	# Preferred usage via public package interface:
+	from src.cli import interfaces as console
+	choice = console.prompt_menu_selection(["Scan", "Parse", "Report"])
+
+	# Direct module usage (acceptable in unit tests or internal scripts only):
+	Not applicable. Use public package interface
 
 Dependencies:
- - Python >= 3.10
- - Standard Library: typing (optional)
+	- Python version: >= 3.10
+	- Standard Library:
 
 Notes:
- - This is the public API boundary; internals may change without notice.
- - Keep this facade thin: only forward calls and avoid side effects or formatting logic.
- - Prefer importing this module in application code and tests to decouple from private modules.
+	- Acts as the public API boundary for command-line interactions
+	- Internal modules may change without notice as long as this interface remains stable
+	- Designed to remain thin and avoid embedding business or formatting logic
 
 License:
- - Internal Use Only
+	- Internal Use Only
 """
 
 # noinspection PyProtectedMember
 from ._show import (
-    error as show_error,
-    header as show_header,
-    info as show_info,
-    log as show_log,
-    success as show_success,
-    warning as show_warning,
+    show_error,
+    show_header,
+    show_info,
+    show_log,
+    show_success,
+    show_warning,
 )
 # noinspection PyProtectedMember
 from ._prompt import (
-    menu_selection as prompt_menu_selection,
-    string_value as prompt_for_string_value,
+    prompt_menu_selection,
+    prompt_for_string_value,
 )
 
 # Define exactly what is public interface.

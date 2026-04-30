@@ -1,25 +1,32 @@
 """
-Unit tests for the public `cli` package interface.
+Smoke tests for the public command-line interface surface.
 
-This suite provides smoke-level coverage for the public API. Covers simple happy-path behavior for every exported function in the interface.
+This module validates basic happy-path interactions for user prompts and display helpers by asserting returned values and minimal I/O behavior. It verifies that prompting functions delegate to input once and return the provided value, and that display helpers call print once and include the provided message without asserting formatting details.
+
 Example Usage:
-    # Preferred usage via project-root invocation:
-    python -m unittest tests/cli/test_interfaces.py
+	# Preferred usage via project-root invocation:
+	python -m unittest tests/cli/test_interfaces.py
 
-    # Direct discovery (runs all tests, including this module):
-    python -m unittest discover -s tests
+	# Direct discovery (runs all tests, including this module):
+	python -m unittest discover -s tests
+
+Test Data and Fixtures:
+	- Uses unittest.mock.patch to replace builtins.input with predefined return values to simulate user input.
+	- Uses unittest.mock.patch to replace builtins.print to capture and inspect calls without writing to the console.
+	- No filesystem or external resources are used; no explicit cleanup is required beyond context manager scope.
 
 Dependencies:
-    - Python >= 3.10
-    - Standard Library: unittest, unittest.mock
-    - External Packages: None
+	- Python >= 3.10
+	- Standard Library: unittest, unittest.mock
 
 Notes:
-    - Tests focus on delegation behavior and do not validate internal formatting or I/O side effects.
-    - Patches `builtins.input` and `builtins.print` to isolate I/O and assert call counts.
+	- Tests assert delegation to input and print via call counts and do not validate output formatting or side effects beyond message inclusion.
+	- Input prompts are checked for containing the provided prompt text without enforcing exact equality to avoid brittleness.
+	- Display helpers are expected to return None and emit exactly one print call containing the input message.
+	- Tests are deterministic and hermetic due to patching of I/O functions.
 
 License:
-    - Internal Use Only
+	- Internal Use Only
 """
 
 import unittest
