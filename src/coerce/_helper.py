@@ -1,34 +1,41 @@
 """
 Regex-based coercion engine with traceable change logs.
 
-This module implements the internal engine that applies ordered regex-based `Rule` transformations and records human-readable logs for each change. It powers BOM field coercion within the coerce package.
+This module applies ordered regular expression transformations to input text and records human-readable logs describing each change, enabling deterministic normalization and auditability within text processing workflows.
+
+Key Responsibilities:
+	- Apply predefined pre-processing transformations before user-defined rules
+	- Execute caller-provided regex-based transformations in strict sequence
+	- Apply post-processing transformations to finalize normalization
+	- Record before-and-after snapshots for each effective change
+	- Produce a structured result containing original input, final output, and change history
 
 Example Usage:
-    # Preferred usage via package interface:
-    # Not exposed publicly; this is an internal module.
+	# Preferred usage via public package interface:
+	Not applicable. This is an internal module and should be accessed via a façade when exposed.
 
-    # Direct internal access (for tests or internal scripts only):
-    from src.coerce import _helper
-    from src.coerce._types import Rule
-    text = "A\tB  C"
-    rules = [Rule(r"\t+", " ", "Replace tabs with spaces"), Rule(r" {2,}", " ", "Collapse multiple spaces")]
-    result = _helper.apply_rule(text, rules, attr_name="description")
-    print(result.coerced_value)  # "A B C"
+	# Direct module usage (acceptable in unit tests or internal scripts only):
+	from src.coerce import _helper
+	from src.coerce._types import Rule
+	result = _helper.apply_rule("A\tB  C", [Rule(r"\t+", " ", "Replace tabs")], attr_name="field")
 
 Dependencies:
-    - Python >= 3.10
-    - Standard Library: re, dataclasses, typing
-    - Internal: src.coerce._types.Rule, Result, Log
+	- Python version: >= 3.10
+	- Standard Library: re
+	- Standard Library: dataclasses
+	- Standard Library: typing
 
 Notes:
-    - This module is an internal implementation detail; all external access should go through `src.coerce.interfaces`.
+	- Designed as an internal implementation detail within a coercion pipeline
+	- Transformation order is strictly enforced and non-commutative
+	- Logs are recorded only when a transformation modifies the input
+	- Output previews are truncated and normalized for readability in logs
 
 License:
-    - Internal Use Only
+	- Internal Use Only
 """
-__all__ = []  # Internal-only; not part of public API. Star import from this module gets nothing.
+__all__ = []  # Internal-only module; explicitly exports nothing to prevent accidental public use.
 
-import re
 from ._types import Rule, Result, Log
 from ._rules import PRE_RULES, POST_RULES
 
@@ -37,21 +44,25 @@ def _show(text: str, max_len: int = 32) -> str:
     """
     Render control characters visibly and truncate long strings.
 
-    Replaces newline and tab with their visible escape sequences and shortens overly long strings with a single ellipsis to produce safe, human-readable log snippets.
+    Replaces newline and tab characters with their visible escape sequences and truncates the resulting string to a maximum length using a single ellipsis when necessary.
 
     Args:
         text (str): The input string to render.
-        max_len (int, optional): Maximum length of the returned preview. Defaults to 32.
+        max_len (int, optional): Maximum allowed length of the returned preview. Defaults to 32.
 
     Returns:
-        str: A readable preview with control characters escaped and length limited.
-
-    Raises:
-        None
+        str: A human-readable preview string with escaped control characters and enforced length limit.
     """
+    # Normalize control characters into visible escape sequences to make logs readable and unambiguous.
+    # This ensures that invisible formatting (e.g., tabs, newlines) does not distort log inspection.
     visible = text.replace("\n", "\\n").replace("\t", "\\t")
+
+    # Enforce maximum length constraint to keep log entries compact and bounded.
+    # The subtraction by 1 ensures space for the ellipsis character without exceeding max_len.
     if len(visible) > max_len:
         return visible[: max_len - 1] + "…"
+
+    # Return unchanged if already within bounds to avoid unnecessary mutation.
     return visible
 
 
@@ -59,63 +70,76 @@ def apply_rule(str_in: str, rules: list[Rule], attr_name: str) -> Result:
     """
     Apply ordered regex coercion rules and collect per-rule change logs.
 
-    Runs a fixed set of pre-rules to remove known artifacts (e.g., Excel XML escapes, control characters), then applies caller rules. Each rule runs sequentially; the output of one becomes the input to the next. A change log entry is recorded only when a rule makes a substitution.
+    Executes a deterministic sequence of transformations: pre-rules, caller-provided rules, and post-rules.
+    Each rule operates on the output of the previous step, ensuring stable and predictable transformations.
+    A log entry is recorded only when a rule produces a change, capturing before/after snapshots and rule description.
 
     Args:
         str_in (str): Raw input string to transform.
-        rules (list[Rule]): Ordered list of coercion rules with pattern, replacement, and description.
-        attr_name (str): Name of the attribute/field associated with this coercion.
+        rules (list[Rule]): Ordered list of coercion rules.
+        attr_name (str): Name of the attribute associated with this coercion.
 
     Returns:
-        Result: Result object containing original, coerced value, and per-rule change logs.
+        Result: Object containing original value, final coerced value, and change logs.
 
     Raises:
         re.error: If any rule contains an invalid regex pattern.
     """
+    # Initialize result container with immutable original value and empty mutation state.
+    # coerced_value is populated only after all transformations complete to ensure consistency.
     result = Result(attr_name=attr_name, original_value=str_in, coerced_value="", changes=[])
+
+    # Maintain explicit input/output buffers to enforce sequential transformation semantics.
+    # text_in always represents the current state before applying a rule.
     text_in = str_in
     text_out = str_in
 
-    # Apply pre-rules first to normalize known artifacts before field-specific coercion rules run.
+    # Apply pre-rules first to normalize known artifacts before user-defined rules.
+    # This enforces a clean baseline and prevents downstream rules from handling inconsistent input forms.
     for rule in PRE_RULES:
-        # Apply the regex substitution
-        text_out = re.sub(rule.pattern, rule.replacement, text_in)
+        # Apply transformation using rule.sub which uses the compiled regex created during app initialization.
+        text_out = rule.sub(text_in)
 
-        # Log only on change to avoid noisy, redundant entries.
+        # Only record a log entry if a mutation actually occurred to avoid noise.
         if text_out != text_in:
+            # Use _show to normalize log output for readability and bounded size.
             log = Log(before=_show(text_in), after=_show(text_out), description=rule.description)
             result.changes.append(log)
 
-        # Carry forward the output as the next input to preserve deterministic sequencing.
+        # Propagate output forward to preserve strict sequential dependency between rules.
         text_in = text_out
 
-    # Process rules in order; stable transformations depend on deterministic sequencing.
+    # Apply caller-provided rules in declared order.
+    # Ordering is critical; transformations are not commutative and must remain deterministic.
     for rule in rules:
-        # Apply the regex substitution
-        text_out = re.sub(rule.pattern, rule.replacement, text_in)
+        # Apply transformation using rule.sub which uses the compiled regex created during app initialization.
+        text_out = rule.sub(text_in)
 
-        # Log only on change to avoid noisy, redundant entries.
+        # Record only meaningful changes to maintain signal-to-noise ratio in logs.
         if text_out != text_in:
             log = Log(before=_show(text_in), after=_show(text_out), description=rule.description)
             result.changes.append(log)
 
-        # Carry forward output as input for next rule
+        # Update input for next iteration to enforce chaining behavior.
         text_in = text_out
 
-    # Apply post-rules to normalize known artifacts after field-specific coercion rules run.
+    # Apply post-rules to finalize normalization after all user rules.
+    # These typically enforce consistent formatting or cleanup invariants.
     for rule in POST_RULES:
-        # Apply the regex substitution
-        text_out = re.sub(rule.pattern, rule.replacement, text_in)
+        # Apply transformation using rule.sub which uses the compiled regex created during app initialization.
+        text_out = rule.sub(text_in)
 
-        # Log only on change to avoid noisy, redundant entries.
+        # Log only if mutation occurred.
         if text_out != text_in:
             log = Log(before=_show(text_in), after=_show(text_out), description=rule.description)
             result.changes.append(log)
 
-        # Carry forward the output as the next input to preserve deterministic sequencing.
+        # Carry forward for completeness and consistency, even though this is the final phase.
         text_in = text_out
 
-    # Finalize coerced value and return immutable record.
+    # Assign final transformed value.
+    # This is done once to ensure result reflects the fully processed output.
     result.coerced_value = text_out
 
+    # Return fully populated result object.
     return result
