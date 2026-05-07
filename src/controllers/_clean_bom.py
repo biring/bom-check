@@ -88,7 +88,7 @@ class CleanBomController(base.BaseController):
     """
 
     name = "Repair BOM"
-    description = "Process BOM through automatic and manual error correction."
+    description = "Clean, correct, validate, and generate a repaired BOM file."
 
     def __init__(self):
         """

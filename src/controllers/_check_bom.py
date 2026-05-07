@@ -55,7 +55,7 @@ _EMPTY_CHECKERS_LOG_MESSAGE: tuple[str, ...] = ("No issues logged.",)
 class CheckBomController(base.BaseController):
 
     name = "Check BOM"
-    description = "Run BOM verification checks and generate a structured issue report."
+    description = "Analyze BOM and generate an issue report."
 
     def __init__(self):
         """
