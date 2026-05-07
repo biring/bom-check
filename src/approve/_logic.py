@@ -34,16 +34,16 @@ License:
 
 __all__ = []  # Internal-only; not part of public API
 
-_VALUE_ERROR: str = "'{a}' = '{b}' is not correct. "
+_VALUE_ERROR: str = "{a!r} = {b!r} is not correct. "
 
-_QTY_ZERO_RULE: str = "'{a}' must be more than zero when '{b}' is blank. "
-_DESIGNATOR_REQUIRED_RULE: str = "'{a}' must be listed when '{b}' is '{c}' (an integer more than zero). "
-_DESIGNATOR_COUNT_RULE: str = "'{a}' count of '{b}' must match '{c}' value of '{d}'. "
-_UNIT_PRICE_SPECIFIED_RULE: str = "'{a}' must be more than zero when '{b}' is '{c}' (more than zero)."
-_SUB_TOTAL_ZERO_RULE: str = "'{a}' must be zero when '{b}' is '{c}' (zero). "
-_SUB_TOTAL_CALC_RULE: str = "'{a}' must be equal to the product of '{b}' = '{c}' and '{d}' = '{e}'. "
-_MATERIAL_COST_CALC_RULE: str = "'{a}' must be equal to the aggregate of '{b}'. "
-_TOTAL_COST_CALC_RULE: str = "'{a}' must be equal to the sum of '{b}' = '{c}' and '{d}' = '{e}'. "
+_QTY_ZERO_RULE: str = "{a!r} must be more than zero when {b!r} is blank. "
+_DESIGNATOR_REQUIRED_RULE: str = "{a!r} must be listed when {b!r} is {c!r} (an integer more than zero). "
+_DESIGNATOR_COUNT_RULE: str = "{a!r} count of {b!r} must match {c!r} value of {d!r}. "
+_UNIT_PRICE_SPECIFIED_RULE: str = "{a!r} must be more than zero when {b!r} is {c!r} (more than zero)."
+_SUB_TOTAL_ZERO_RULE: str = "{a!r} must be zero when {b!r} is {c!r} (zero). "
+_SUB_TOTAL_CALC_RULE: str = "{a!r} must be equal to the product of {b!r} = {c!r} and {d!r} = {e!r}. "
+_MATERIAL_COST_CALC_RULE: str = "{a!r} must be equal to the aggregate of {b!r}. "
+_TOTAL_COST_CALC_RULE: str = "{a!r} must be equal to the sum of {b!r} = {c!r} and {d!r} = {e!r}. "
 
 import src.utils as utils
 
