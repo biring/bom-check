@@ -38,6 +38,7 @@ __all__ = []  # Internal-only module; explicitly exports nothing to prevent acci
 
 import pandas as pd
 
+from src.cli import interfaces as cli
 from src.checkers import interfaces as checker
 from src.exporters import interfaces as exporter
 from src.importers import interfaces as importer
@@ -160,6 +161,8 @@ class CheckBomController(base.BaseController):
                 lines=self.checkers_log,
                 overwrite=True,
             )
+
+            cli.show_success("\nBOM check workflow completed successfully.")
 
         except Exception as exc:
             # Wrap all exceptions to provide a consistent high-level failure boundary

@@ -7,6 +7,7 @@ from src.enumeration import SourceFileType, OutputFileType, BomTempVer
 # noinspection PyProtectedMember
 from src.controllers import _base as base # migrating to controller to deprecating paths.py
 
+from src.cli import interfaces as cli
 from src.menus import interfaces as menu
 from src.importers import interfaces as importer
 
@@ -95,6 +96,8 @@ def sequence_cbom_for_cost_walk() -> None:
     file_name = OutputFileType.CW.value + file_name
     # write Excel file data
     files.write_single_sheet_excel_file_data(folder_path, file_name, df)
+
+    cli.show_success("\nCost walk workflow completed successfully.")
 
     return None
 
@@ -210,6 +213,8 @@ def sequence_cbom_for_db_upload() -> None:
     file_name = OutputFileType.dB_CB.value + file_name
     # write Excel file data
     files.write_single_sheet_excel_file_data(folder_path, file_name, df)
+
+    cli.show_success("\ncBOM generation workflow completed successfully.")
 
     return None
 
@@ -330,5 +335,7 @@ def sequence_ebom_for_db_upload():
     file_name = OutputFileType.db_EB.value + file_name
     # write Excel file data
     files.write_single_sheet_excel_file_data(folder_path, file_name, df)
+
+    cli.show_success("\neBOM generation workflow completed successfully.")
 
     return None

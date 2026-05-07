@@ -144,6 +144,7 @@ class TestCleanBomController(unittest.TestCase):
                 attribute=patch_menu.file_selector.__name__,
                 return_value=self.test_file_name + ".xlsx"
             ),
+            patch("builtins.print"),
         ):
 
             # ACT

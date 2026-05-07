@@ -40,6 +40,7 @@ import pandas as pd
 
 from src.checkers import interfaces as checker
 from src.cleaners import interfaces as cleaner
+from src.cli import interfaces as cli
 from src.exporters import interfaces as exporter
 from src.fixers import interfaces as fixer
 from src.importers import interfaces as importer
@@ -276,6 +277,8 @@ class CleanBomController(base.BaseController):
             # Any remaining issues indicate unresolved validation failures.
             if self.checker_log != _EMPTY_CHECKER_LOG_MESSAGE:
                 raise RuntimeError("Post processing checker log is not empty.")
+
+            cli.show_success("\nBOM clean workflow completed successfully.")
 
         except Exception as exc:
             # Wrap any failure to provide a single high-level workflow error while preserving the original exception chain.
