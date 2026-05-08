@@ -177,16 +177,14 @@ class TestShowTitle(unittest.TestCase):
         Should print version and build information.
         """
         # ARRANGE
-        patch_file_version = main.version
-        patch_file_print = main
-
-        patch_func_print = print.__name__
+        patch_version = main.version
+        patch_cli = main.cli
 
         # ACT
         with (
-            patch.object(patch_file_version, "__version__", "1.0.0"),
-            patch.object(patch_file_version, "__build__", "abc123"),
-            patch.object(patch_file_print, patch_func_print) as mock_print,
+            patch.object(patch_version, "__version__", "1.0.0"),
+            patch.object(patch_version, "__build__", "abc123"),
+            patch.object(patch_cli, patch_cli.show_info.__name__) as mock_print,
         ):
             result = main.show_title()
 
@@ -233,13 +231,13 @@ class TestMain(unittest.TestCase):
 
         patch_func_show = patch_file.show_title.__name__
         patch_func_run = patch_file.run_menu.__name__
-        patch_func_input = input.__name__
+        patch_func_input = patch_file.cli.prompt_for_string_value.__name__
 
         # ACT
         with (
             patch.object(patch_file, patch_func_show),
             patch.object(patch_file, patch_func_run, return_value=False),
-            patch.object(patch_file, patch_func_input, return_value="")
+            patch.object(patch_file.cli, patch_func_input, return_value="")
         ):
             result = main.run_application()
 

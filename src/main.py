@@ -115,17 +115,17 @@ def run_menu() -> bool | None:
         else:
             # Defensive guard: selection exceeds available options
             # This should only occur if CLI layer returns an invalid index
-            print("WARNING! Invalid selection. Please select a valid option.")
+            cli.show_warning("\nInvalid selection. Please select a valid option.")
 
     except KeyboardInterrupt:
         # Treat user interrupt as intentional termination, not an error
-        print("\nUser selected to exit the application.")
+        cli.show_warning("\nUser selected to exit the application.")
         return False
 
     except Exception as e:
         # Catch-all for unexpected failures; prevents crash and surfaces error context
-        print('*** ERROR ***')
-        print(f"An error occurred: {e}")
+        cli.show_error('\n*** ERROR ***')
+        cli.show_error(f'{e}')
         return False
 
     # Successful execution path
@@ -143,10 +143,10 @@ def show_title():
         None: This function performs output only and does not return a value.
     """
     # Output version string; assumes attribute exists and is properly formatted
-    print(f'Version {version.__version__} ')
+    cli.show_info(f'Version {version.__version__} ')
 
     # Output build identifier; trailing space preserved for consistency with original behavior
-    print(f'Build {version.__build__} ')
+    cli.show_info(f'Build {version.__build__} ')
 
 
 def run_application():
@@ -180,8 +180,7 @@ def run_application():
 
         elif not result:
             # Error or interrupt path; provide pause so user can read output
-            print()
-            input("\nPress Enter to close application...")
+            cli.prompt_for_string_value("\nPress Enter to close application...")
             break
 
 
