@@ -69,8 +69,8 @@ _REQUIRED_KEYS: Final[tuple[str, ...]] = tuple(sorted(asdict(KEYS).values()))
 
 # Default values for each temporary setting
 _DEFAULT_TEMP_SETTINGS: Final[dict[str, Any]] = {
-    KEYS.DESTINATION_FILES_FOLDER: folder_path.resolve_project_folder(),
-    KEYS.SOURCE_FILES_FOLDER: folder_path.resolve_project_folder(),
+    KEYS.DESTINATION_FILES_FOLDER: folder_path.resolve_drive_letter(),
+    KEYS.SOURCE_FILES_FOLDER: folder_path.resolve_drive_letter(),
 }
 
 _TEMP_FILE_NAME: Final[str] = "temporary_settings"
