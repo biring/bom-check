@@ -102,6 +102,7 @@ DEVICE_PACKAGE: list = [
 # description
 DESCRIPTION: list = [
     rx.REMOVE_WHITESPACES_EXCEPT_SPACE,
+    rx.DIMENSION_SEPARATOR_STAR,
 ]
 # unit
 UNITS: list = [

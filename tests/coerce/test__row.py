@@ -233,6 +233,9 @@ class TestDescription(Assert):
         # ARRANGE
         cases = [
             CoercionCase("\nRes, 1k,\t 0603", "Res, 1k, 0603", regex.REMOVE_WHITESPACES_EXCEPT_SPACE.description),
+            CoercionCase("10*20mm", "10x20mm", regex.DIMENSION_SEPARATOR_STAR.description),
+            CoercionCase("10*20*30mm", "10x20x30mm", regex.DIMENSION_SEPARATOR_STAR.description),
+            CoercionCase("10mm*20mm*30mm", "10mmx20mmx30mm", regex.DIMENSION_SEPARATOR_STAR.description),
         ]
         # ACT
         for case in cases:
